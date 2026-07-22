@@ -113,6 +113,7 @@
     "verify:stack": "node scripts/verify-stack-connection.mjs",
     "verify:ai-stack": "node scripts/verify-ai-stack.mjs",
     "verify:rag": "node scripts/verify-rag.mjs",
+    "verify:rag-quality": "node scripts/verify-rag-quality.mjs",
     "verify:safety": "node scripts/verify-safety-rules.mjs",
     "verify:ts-backend": "node scripts/verify-ts-backend.mjs",
     "lint": "eslint src",
