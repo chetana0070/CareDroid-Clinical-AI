@@ -992,6 +992,11 @@ export const BACKEND_HTTP_ROUTES = Object.freeze([
   { method: 'GET', path: '/api/emergency/patients/:patientId/orchestration', controller: 'EmergencyOsController' },
   { method: 'GET', path: '/api/emergency/reception/snapshot', controller: 'EmergencyOsController' },
   { method: 'POST', path: '/api/emergency/reception/handoff', controller: 'EmergencyOsController' },
+  {
+    method: 'POST',
+    path: '/api/emergency/reception/escalation',
+    controller: 'EmergencyOsController',
+  },
   { method: 'POST', path: '/api/emergency/triage/assist', controller: 'EmergencyOsController' },
 
   { method: 'GET', path: '/api/native-ai/drift', controller: 'NativeAiController' },
