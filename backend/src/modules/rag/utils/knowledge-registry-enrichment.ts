@@ -16,7 +16,15 @@ export interface RegistryArtifactLite {
   content_path?: string;
   publisher?: string;
 }
+type EvidenceLevel = NonNullable<MedicalSource['evidenceLevel']>;
 
+function normalizeEvidenceLevel(value?: string): EvidenceLevel | undefined {
+  if (value === 'A' || value === 'B' || value === 'C' || value === 'expert_opinion') {
+    return value;
+  }
+
+  return undefined;
+}
 /**
  * Load accepted knowledge-registry artifacts for metadata enrichment at ingest time.
  */
@@ -69,7 +77,7 @@ export function enrichSourceWithRegistry(
     title: source.title || artifact.title || source.id,
     organization: source.organization || artifact.publisher,
     specialty: source.specialty || artifact.specialty,
-    evidenceLevel: source.evidenceLevel || artifact.evidence_grade,
+    evidenceLevel: source.evidenceLevel || normalizeEvidenceLevel(artifact.evidence_grade),
     authoritative:
       source.authoritative ??
       (artifact.review_status === 'accepted' ||

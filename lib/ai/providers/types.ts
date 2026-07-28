@@ -19,15 +19,18 @@ export interface LlmAdapterRuntime {
   /** Optional override model/deployment name */
   model?: string;
   metadataLogger?: (metadata: {
-    requestType: AIRequestType;
-    model: string;
-    stream: boolean;
-    maxTokens: number;
-    usage: AIResponse['usage'];
-    toolCallCount: number;
-    provider?: LlmProviderId;
-    phiMinimized?: boolean;
-  }) => void;
+  requestType: AIRequestType;
+  model: string;
+  stream: boolean;
+  maxTokens: number;
+  usage: AIResponse['usage'];
+  toolCallCount: number;
+  provider?: LlmProviderId;
+  phiMinimized?: boolean;
+  redactionCount?: number;
+  fallbackUsed?: boolean;
+  deployMode?: string;
+}) => void;
 }
 
 export interface LlmAdapter {

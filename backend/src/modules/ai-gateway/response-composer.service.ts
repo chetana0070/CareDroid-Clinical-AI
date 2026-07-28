@@ -55,7 +55,7 @@ export class ResponseComposerService {
             confidence,
             ragSources: citations,
             ragChunks: chunks,
-            modelOrEngine: routePlan.modelPlan?.primaryModel || routePlan.selectedExpert,
+            modelOrEngine: routePlan.costPlan?.preferredModel ||  routePlan.modelPlan?.expertModel ||  routePlan.selectedExpert,
             responseClass: routePlan.safetyPlan?.emergencyEscalation ? 'clinical' : 'operational',
             recommendedReviewerRole: 'Responsible clinician',
             missingInformation: Array.isArray((response as any).missingInformation)
