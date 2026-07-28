@@ -23,7 +23,13 @@ test.beforeEach(async ({ page }) => {
 });
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const RESULTS_PATH = join(__dirname, '..', 'qa', 'a11y-results.json');
+// Per-page files, not one shared array + a single afterAll: fullyParallel +
+// retries can run this file's tests across multiple worker processes, each
+// with its own module instance, so a shared array + one afterAll write only
+// ever captures whichever worker happened to finish last (silently dropping
+// every other page's results). Writing immediately per-test, keyed by page,
+// is race-free regardless of worker/retry topology.
+const RESULTS_DIR = join(__dirname, '..', 'qa', 'a11y-results');
 
 /** One representative page per major UI archetype — dashboard, chat, catalog, form, list, map, table. */
 const A11Y_PAGES = [
@@ -35,17 +41,20 @@ const A11Y_PAGES = [
   { id: 'clinical-alerts', label: 'Clinical Alerts', path: '/clinical/alerts' },
   { id: 'hospital-map', label: 'Hospital Map', path: '/hospital-map' },
   { id: 'devices', label: 'Device Fleet Management', path: '/devices' },
+  // Interactive-Intelligence workspaces (Cy79 coverage growth).
+  { id: 'reception-workspace', label: 'Reception Workspace (interactive AI)', path: '/emergency/reception' },
+  { id: 'ems-pipeline', label: 'EMS Pipeline (interactive AI)', path: '/emergency/ems' },
+  // Cy95 coverage growth: 5 more archetypes (patient board, chart-heavy
+  // dashboard, settings form, triage queue, interactive scenario list).
+  { id: 'emergency-whiteboard', label: 'Emergency Whiteboard (patient board)', path: '/emergency/whiteboard' },
+  { id: 'emergency-analytics', label: 'Emergency Analytics (charts)', path: '/emergency/analytics' },
+  { id: 'emergency-settings', label: 'Emergency Settings (form)', path: '/emergency/settings' },
+  { id: 'triage-queue', label: 'Triage Queue', path: '/triage' },
+  { id: 'simulation', label: 'Medical Simulation Suite', path: '/simulation' },
 ];
 
 /** WCAG 2.1 A/AA is the baseline every page must clear; best-practice rules are reported, not enforced yet. */
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
-
-const allResults = [];
-
-test.afterAll(async () => {
-  mkdirSync(dirname(RESULTS_PATH), { recursive: true });
-  writeFileSync(RESULTS_PATH, JSON.stringify(allResults, null, 2));
-});
 
 for (const pageDef of A11Y_PAGES) {
   test(`a11y: ${pageDef.id}`, async ({ page }, testInfo) => {
@@ -65,12 +74,20 @@ for (const pageDef of A11Y_PAGES) {
       sample: v.nodes[0]?.target,
     }));
 
-    allResults.push({
-      pageId: pageDef.id,
-      path: pageDef.path,
-      violationCount: axeResults.violations.length,
-      violations: violationSummary,
-    });
+    mkdirSync(RESULTS_DIR, { recursive: true });
+    writeFileSync(
+      join(RESULTS_DIR, `${pageDef.id}.json`),
+      JSON.stringify(
+        {
+          pageId: pageDef.id,
+          path: pageDef.path,
+          violationCount: axeResults.violations.length,
+          violations: violationSummary,
+        },
+        null,
+        2,
+      ),
+    );
 
     testInfo.attach('axe-violations', {
       body: JSON.stringify(violationSummary, null, 2),

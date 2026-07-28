@@ -27,72 +27,114 @@
   }
 }
 
+/**
+ * SINGLE shell for patient cards — do not re-declare full chrome later in this file.
+ * Visual frame comes from .cdl-card (border, elev, data-severity, data-acuity rail).
+ */
+.patient-card.cdl-card,
 .patient-card {
-  animation: patient-card-enter var(--motion-duration-normal, 180ms) var(--motion-ease-standard, ease-out);
-  background: var(--color-card);
-  color: var(--color-text-primary);
+  --patient-priority-color: var(--cdl-brand-500);
+  animation: patient-card-enter var(--cdl-duration-normal, 180ms) var(--cdl-ease-standard, ease-out);
+  display: grid;
+  gap: var(--cdl-space-2, 8px);
   inline-size: 100%;
   min-inline-size: 0;
+  min-height: 0;
+  position: relative;
+  padding: var(--cdl-space-3, 12px);
   isolation: isolate;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--cdl-card-bg, var(--cdl-surface-card, #ffffff));
+  color: var(--cdl-card-fg, var(--cdl-ink, #111827));
+  border: 1px solid var(--cdl-card-border, var(--cdl-border, #e2e8f0));
+  border-radius: var(--cdl-radius-lg, 12px);
+  box-shadow: var(--cdl-elev-1);
+  /* One acuity rail only (border-left). CDL ::before disabled for patient-card. */
+  border-left: 4px solid var(--patient-priority-color, var(--cdl-brand-500));
   transition:
-    background-color var(--motion-transition-fast, 120ms ease),
-    border-color var(--motion-transition-fast, 120ms ease),
-    box-shadow var(--motion-transition-fast, 120ms ease),
-    transform var(--motion-transition-fast, 120ms ease);
-  will-change: transform;
+    background-color var(--cdl-duration-fast, 120ms) var(--cdl-ease-standard, ease),
+    border-color var(--cdl-duration-fast, 120ms) var(--cdl-ease-standard, ease),
+    box-shadow var(--cdl-duration-fast, 120ms) var(--cdl-ease-standard, ease);
+}
+
+.patient-card--priority-P1 { --patient-priority-color: var(--cdl-acuity-p1, #dc2626); }
+.patient-card--priority-P2 { --patient-priority-color: var(--cdl-acuity-p2, #ea580c); }
+.patient-card--priority-P3 { --patient-priority-color: var(--cdl-acuity-p3, #d97706); }
+.patient-card--priority-P4 { --patient-priority-color: var(--cdl-acuity-p4, #0284c7); }
+.patient-card--priority-P5 { --patient-priority-color: var(--cdl-acuity-p5, #64748b); }
+
+.patient-card[data-severity='critical'],
+.patient-card--deterioration-risk,
+.patient-card--lwbs-risk {
+  border-left-color: var(--cdl-critical, #dc2626);
+  border-left-width: 5px;
+}
+
+.patient-card[data-severity='warning'],
+.patient-card--long-wait,
+.patient-card--reassessment-due {
+  border-left-color: var(--cdl-warning, #b45309);
+}
+
+/* EMS: no full-card gradient shell — acuity/severity rail is enough */
+
+.patient-card__secondary-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+  max-height: 4.5rem;
+  overflow: hidden;
+}
+
+.patient-card__secondary-badges > * {
+  flex: 0 1 auto;
+  max-width: 100%;
+}
+
+.patient-card--row {
+  display: grid;
+  min-height: 0;
+  border-left-width: 4px;
+}
+
+.patient-card .cdl-wait,
+.patient-card .cdl-text-severity {
+  font-variant-numeric: tabular-nums;
 }
 
 .patient-card [style*='var(--color-floating-surface)'] {
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: var(--component-inner-shadow) !important;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
 .patient-card:hover,
-.patient-card:active,
 .patient-card:focus-visible,
 .patient-card--highlighted,
 .patient-card--keyboard-selected {
-  box-shadow:
-    0 0 0 2px color-mix(in srgb, var(--color-primary) 28%, transparent),
-    var(--app-elevation-card) !important;
+  box-shadow: var(--cdl-elev-2);
+  border-color: var(--cdl-border-strong, var(--cdl-slate-300, #cbd5e1));
   outline: none;
-  transform: translateY(-1px);
 }
 
-.patient-card:active {
-  transform: translateY(0) scale(0.996);
+.patient-card:focus-visible {
+  box-shadow: var(--cdl-focus-ring), var(--cdl-elev-2);
 }
 
 .patient-card--reassessment-due {
   animation:
-    patient-card-enter var(--motion-duration-normal, 180ms) var(--motion-ease-standard, ease-out),
-    patient-card-reassessment-pulse 1.4s var(--motion-ease-standard, ease-in-out) infinite
-      var(--motion-duration-normal, 180ms);
+    patient-card-enter var(--cdl-duration-normal, 180ms) var(--cdl-ease-standard, ease-out),
+    patient-card-reassessment-pulse 1.4s var(--cdl-ease-standard, ease-in-out) infinite
+      var(--cdl-duration-normal, 180ms);
 }
 
-.patient-card--deterioration-risk {
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--status-danger) 36%, transparent),
-    var(--app-elevation-card) !important;
-}
-
-.patient-card--long-wait {
-  box-shadow:
-    inset 0 3px 0 var(--status-warning),
-    var(--app-elevation-card) !important;
-}
-
-.patient-card--lwbs-risk {
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--status-danger) 40%, transparent),
-    var(--app-elevation-floating, var(--app-elevation-card)) !important;
-}
-
-.patient-card--ems-arrival {
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--color-secondary) 12%, transparent), transparent 46%),
-    var(--color-card) !important;
+@media (prefers-reduced-motion: reduce) {
+  .patient-card--reassessment-due {
+    animation: none;
+  }
 }
 
 .patient-card--mission-control .patient-card__scores,
@@ -101,10 +143,11 @@
 }
 
 .patient-card__lwbs-badge {
-  background: color-mix(in srgb, var(--status-danger) 88%, var(--color-background));
-  border: 1px solid color-mix(in srgb, var(--status-danger) 54%, var(--color-border-default));
+  /* Tint + dual-mode text — not solid red with forced white */
+  background: var(--cdl-pill-critical-bg, var(--cdl-critical-bg, #fef2f2)) !important;
+  border: 1px solid var(--cdl-pill-critical-bd, var(--cdl-critical-border, #fecaca)) !important;
   border-radius: 999px;
-  color: var(--app-on-solid);
+  color: var(--cdl-pill-critical-fg, var(--cdl-critical-text, #991b1b)) !important;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -161,14 +204,18 @@
   position: absolute;
 }
 
-.patient-card__timeline-button {
+.patient-card__timeline-button,
+.patient-card__room-display-button {
+  align-items: center;
   border: 1px solid transparent;
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-primary) 8%, transparent);
   color: var(--color-primary);
   cursor: pointer;
+  display: inline-flex;
   font-size: 10px;
   font-weight: 700;
+  gap: 4px;
   min-height: 30px;
   padding: 3px 7px;
   transition:
@@ -180,14 +227,18 @@
 
 .patient-card__timeline-button:hover,
 .patient-card__timeline-button:active,
-.patient-card__timeline-button:focus-visible {
+.patient-card__timeline-button:focus-visible,
+.patient-card__room-display-button:hover,
+.patient-card__room-display-button:active,
+.patient-card__room-display-button:focus-visible {
   background: color-mix(in srgb, var(--color-primary) 14%, transparent);
   border-color: color-mix(in srgb, var(--color-primary) 34%, var(--color-border-default));
   color: var(--color-text-primary);
   outline: none;
 }
 
-.patient-card__timeline-button:active {
+.patient-card__timeline-button:active,
+.patient-card__room-display-button:active {
   transform: scale(0.985);
 }
 
@@ -255,77 +306,26 @@
   align-items: center;
   gap: 6px;
   font-weight: 700;
-  color: var(--medical-text-link, var(--app-link-fg));
+  color: var(--cdl-ink-muted, #475569);
 }
 
-/* Visual QA clarity pass: make triage/state/risk readable without relying on tiny color marks. */
-.patient-card {
-  --patient-priority-color: var(--status-info);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--patient-priority-color) 10%, var(--color-card)) 0%,
-      var(--color-card) 42%
-    ) !important;
-  border: 1px solid color-mix(in srgb, var(--patient-priority-color) 34%, var(--color-border-default)) !important;
-  border-left: 7px solid var(--patient-priority-color) !important;
-  border-radius: var(--radius-lg) !important;
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--patient-priority-color) 10%, transparent),
-    var(--app-elevation-card) !important;
-  cursor: pointer;
-  display: grid;
-  gap: 9px;
-  min-height: 246px;
-  overflow: hidden;
-  padding: 0 12px 12px !important;
-  position: relative;
-}
-
+/* Slim header strip — NOT a second card shell (no full gradients / forced min-height) */
 .patient-card--mission-control {
-  min-height: 338px !important;
-}
-
-.patient-card--priority-P1,
-.patient-card--deterioration-risk,
-.patient-card--lwbs-risk {
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--status-danger) 38%, transparent),
-    0 14px 30px color-mix(in srgb, var(--status-danger) 13%, transparent),
-    var(--app-elevation-card) !important;
-}
-
-.patient-card--priority-P2 {
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--status-warning) 26%, transparent),
-    var(--app-elevation-card) !important;
-}
-
-.patient-card--long-wait {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--status-warning) 12%, var(--color-card)) 0%,
-      var(--color-card) 44%
-    ) !important;
+  /* content-driven height; no forced 338px second frame */
 }
 
 .patient-card__priority-strip {
   align-items: center;
-  background:
-    linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--patient-priority-color) 30%, var(--color-background)),
-      color-mix(in srgb, var(--patient-priority-color) 12%, var(--color-card))
-    );
-  border-bottom: 1px solid color-mix(in srgb, var(--patient-priority-color) 32%, var(--color-border-default));
-  color: var(--color-text-primary);
-  display: grid;
-  gap: 7px;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  margin: 0 -12px;
-  min-height: 42px;
-  padding: 8px 10px 8px 12px;
+  background: var(--cdl-surface-muted, var(--cdl-slate-50, #f8fafc));
+  border: 1px solid var(--cdl-border, #e2e8f0);
+  border-radius: var(--cdl-radius-md, 8px);
+  color: var(--cdl-ink, #111827);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 0;
+  margin: 0;
+  padding: 6px 8px;
 }
 
 .patient-card__priority-code {
@@ -355,12 +355,13 @@
 }
 
 .patient-card__state-pill {
-  background: color-mix(in srgb, var(--color-background) 58%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-text-primary) 16%, transparent);
-  border-radius: var(--radius-pill);
-  color: var(--color-text-primary);
+  /* Neutral muted pill — dual-mode ink (never white on light) */
+  background: var(--cdl-pill-neutral-bg, var(--cdl-surface-muted, #f1f5f9)) !important;
+  border: 1px solid var(--cdl-pill-neutral-bd, var(--cdl-border, #e2e8f0)) !important;
+  border-radius: var(--cdl-radius-full, 999px);
+  color: var(--cdl-pill-neutral-fg, var(--cdl-ink, #0f172a)) !important;
   font-size: 11px;
-  font-weight: 850;
+  font-weight: 700;
   padding: 4px 8px;
   white-space: nowrap;
 }
@@ -460,57 +461,211 @@
   min-height: 25px;
 }
 
+/*
+ * Pills inventory (PatientCard):
+ * 1. state-pill          — whiteboard journey state (neutral solid)
+ * 2. signal--critical    — sepsis, deterioration, LWBS, high risk
+ * 3. signal--warning     — reassessment, long wait, triage pending, capacity
+ * 4. signal--info        — EMS arrival, referral, data quality
+ * 5. signal--flow        — boarding, transfer, arrival mode (ops teal)
+ * 6. signal--stable      — no active risk flags (ok green)
+ * 7. signal--overflow    — +N more signals
+ * 8. flag--*             — PatientFlag chips (same tones)
+ * 9. score--red/yellow/green — saved clinical scores
+ * 10. Nested secondary badges (LWBS, FitToWait, journey, flow, etc.)
+ *
+ * Contract: tinted bg + dark/light AA text pair — never bright status as text alone.
+ */
 .patient-card__signal,
 .patient-card__flag,
-.patient-card__scores span {
+.patient-card__score,
+.patient-card__scores span,
+.patient-card .cdl-badge,
+.patient-card .cdl-pill {
   align-items: center;
-  border-radius: var(--radius-pill);
+  background: var(--cdl-surface-muted) !important;
+  border: 1px solid var(--cdl-border) !important;
+  border-radius: var(--cdl-radius-full, 999px);
+  box-shadow: none !important;
+  color: var(--cdl-ink) !important;
   display: inline-flex;
   font-size: 10px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 0.02em;
+  line-height: 1.2;
+  max-width: 100%;
   min-height: 22px;
-  padding: 3px 7px;
+  padding: 3px 8px;
   white-space: nowrap;
 }
 
-.patient-card__signal--critical {
-  background: color-mix(in srgb, var(--status-danger) 18%, var(--color-card));
-  border: 1px solid color-mix(in srgb, var(--status-danger) 46%, var(--color-border-default));
-  color: var(--status-danger);
+/* Tone colors: dual-mode --cdl-pill-* tokens from cdl-v2/pills.css (light + dark) */
+.patient-card__signal--critical,
+.patient-card__flag--critical,
+.patient-card__score--red {
+  background: var(--cdl-pill-critical-bg, #fef2f2) !important;
+  border-color: var(--cdl-pill-critical-bd, #fecaca) !important;
+  color: var(--cdl-pill-critical-fg, #991b1b) !important;
 }
 
-.patient-card__signal--warning {
-  background: color-mix(in srgb, var(--status-warning) 18%, var(--color-card));
-  border: 1px solid color-mix(in srgb, var(--status-warning) 46%, var(--color-border-default));
-  color: var(--status-warning);
+.patient-card__signal--warning,
+.patient-card__flag--warning,
+.patient-card__score--yellow {
+  background: var(--cdl-pill-warning-bg, #fffbeb) !important;
+  border-color: var(--cdl-pill-warning-bd, #fde68a) !important;
+  color: var(--cdl-pill-warning-fg, #92400e) !important;
 }
 
-.patient-card__signal--info {
-  background: color-mix(in srgb, var(--color-secondary) 16%, var(--color-card));
-  border: 1px solid color-mix(in srgb, var(--color-secondary) 42%, var(--color-border-default));
-  color: var(--color-secondary);
+.patient-card__signal--info,
+.patient-card__flag--info {
+  background: var(--cdl-pill-info-bg, #f0f9ff) !important;
+  border-color: var(--cdl-pill-info-bd, #bae6fd) !important;
+  color: var(--cdl-pill-info-fg, #075985) !important;
 }
 
-.patient-card__signal--flow {
-  background: color-mix(in srgb, var(--color-accent) 16%, var(--color-card));
-  border: 1px solid color-mix(in srgb, var(--color-accent) 42%, var(--color-border-default));
-  color: var(--color-accent);
+.patient-card__signal--flow,
+.patient-card__flag--flow {
+  background: var(--cdl-pill-ops-bg, #f0fdfa) !important;
+  border-color: var(--cdl-pill-ops-bd, #99f6e4) !important;
+  color: var(--cdl-pill-ops-fg, #115e59) !important;
 }
 
 .patient-card__signal--overflow,
 .patient-card__flag--overflow {
-  background: color-mix(in srgb, var(--color-text-muted) 16%, transparent);
-  border: 1px dashed color-mix(in srgb, var(--color-border-default) 80%, transparent);
-  color: var(--color-text-muted);
+  background: var(--cdl-pill-neutral-bg, #f1f5f9) !important;
+  border: 1px dashed var(--cdl-pill-neutral-bd, #cbd5e1) !important;
+  color: var(--cdl-pill-neutral-fg, #334155) !important;
   font-size: 10px;
+  font-weight: 700;
+}
+
+.patient-card__signal--stable,
+.patient-card__score--green {
+  background: var(--cdl-pill-ok-bg, #ecfdf5) !important;
+  border-color: var(--cdl-pill-ok-bd, #a7f3d0) !important;
+  color: var(--cdl-pill-ok-fg, #065f46) !important;
+}
+
+/* Nested badges: strip chrome only — tones come from source CSS + CDL pairs */
+.patient-card__secondary-badges,
+.patient-card__more-signals,
+.patient-card__signals {
+  color: var(--cdl-ink);
+}
+
+.patient-card__secondary-badges * {
+  max-width: 100%;
+}
+
+.patient-card__secondary-badges [class*='badge'],
+.patient-card__secondary-badges [class*='Badge'],
+.patient-card__secondary-badges [class*='pill'],
+.patient-card__secondary-badges [class*='Pill'],
+.patient-card__signals [class*='badge'],
+.patient-card__signals [class*='Badge'],
+.patient-card__queue-reason [class*='badge'] {
+  border-radius: var(--cdl-radius-full, 999px) !important;
+  box-shadow: none !important;
+  font-weight: 700 !important;
+  max-width: 100%;
+}
+
+/* Nested tone safety net uses dual-mode --cdl-pill-* (see cdl-v2/pills.css) */
+.patient-card [class*='--critical'],
+.patient-card [class*='--overload'],
+.patient-card [class*='--handoff-delay'],
+.patient-card [class*='--danger'],
+.patient-card [class*='high-risk-complaint-badge__review'],
+.patient-card [class*='high-risk-complaint-badge__flag'],
+.patient-card [data-tone='critical'] {
+  background: var(--cdl-pill-critical-bg, #fef2f2) !important;
+  border-color: var(--cdl-pill-critical-bd, #fecaca) !important;
+  color: var(--cdl-pill-critical-fg, #991b1b) !important;
+}
+
+.patient-card [class*='--warning'],
+.patient-card [class*='--watch'],
+.patient-card [class*='--congestion'],
+.patient-card [class*='--review']:not([class*='high-risk']),
+.patient-card [data-tone='warning'],
+.patient-card [data-tone='watch'],
+.patient-card [data-tone='urgent'] {
+  background: var(--cdl-pill-warning-bg, #fffbeb) !important;
+  border-color: var(--cdl-pill-warning-bd, #fde68a) !important;
+  color: var(--cdl-pill-warning-fg, #92400e) !important;
+}
+
+.patient-card [class*='--info'],
+.patient-card [class*='high-risk-complaint-badge__more'],
+.patient-card [data-tone='info'] {
+  background: var(--cdl-pill-info-bg, #f0f9ff) !important;
+  border-color: var(--cdl-pill-info-bd, #bae6fd) !important;
+  color: var(--cdl-pill-info-fg, #075985) !important;
+}
+
+.patient-card [class*='--stable'],
+.patient-card [class*='--success'],
+.patient-card [class*='--ok'],
+.patient-card [class*='--clear'],
+.patient-card [class*='--fresh'],
+.patient-card [data-tone='ok'],
+.patient-card [data-tone='success'],
+.patient-card [data-tone='stable'] {
+  background: var(--cdl-pill-ok-bg, #ecfdf5) !important;
+  border-color: var(--cdl-pill-ok-bd, #a7f3d0) !important;
+  color: var(--cdl-pill-ok-fg, #065f46) !important;
+}
+
+.patient-card [class*='--flow'],
+.patient-card [class*='--ops'],
+.patient-card [data-tone='flow'],
+.patient-card [data-tone='ops'] {
+  background: var(--cdl-pill-ops-bg, #f0fdfa) !important;
+  border-color: var(--cdl-pill-ops-bd, #99f6e4) !important;
+  color: var(--cdl-pill-ops-fg, #115e59) !important;
+}
+
+.patient-card [class*='--neutral'],
+.patient-card [data-tone='neutral'] {
+  background: var(--cdl-pill-neutral-bg, #f1f5f9) !important;
+  border-color: var(--cdl-pill-neutral-bd, #cbd5e1) !important;
+  color: var(--cdl-pill-neutral-fg, #334155) !important;
+}
+
+/* Collapsed "More signals" — not a nested card */
+.patient-card__more-signals {
+  border: 0;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.patient-card__more-signals-summary {
+  color: var(--cdl-ink-muted);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  list-style: none;
+  padding: 2px 0;
+  user-select: none;
+}
+
+.patient-card__more-signals-summary::-webkit-details-marker {
+  display: none;
+}
+
+.patient-card__more-signals-summary::before {
+  content: '+ ';
+  color: var(--cdl-ink-subtle);
   font-weight: 800;
 }
 
-.patient-card__signal--stable {
-  background: color-mix(in srgb, var(--status-success) 12%, var(--color-card));
-  border: 1px solid color-mix(in srgb, var(--status-success) 34%, var(--color-border-default));
-  color: var(--status-success);
+.patient-card__more-signals[open] > .patient-card__more-signals-summary::before {
+  content: '− ';
+}
+
+.patient-card__more-signals[open] .patient-card__secondary-badges {
+  margin-top: 6px;
 }
 
 .patient-card__meta-grid {
@@ -528,7 +683,15 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px 8px;
   font-size: 10px;
-  color: var(--color-text-secondary, #9ca3af);
+  color: var(--cdl-ink-muted, #334155);
+}
+
+.patient-card__meta-item span {
+  color: var(--cdl-ink-muted) !important;
+}
+
+.patient-card__meta-item strong {
+  color: var(--cdl-ink) !important;
 }
 
 .patient-card__timer-grid span {
@@ -564,6 +727,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.patient-card__wait-remaining {
+  display: block;
+  font-size: 0.72em;
+  opacity: 0.9;
 }
 
 .patient-card__vitals {
@@ -607,15 +776,15 @@
 }
 
 .patient-card__vital--critical {
-  background: color-mix(in srgb, var(--status-danger) 13%, var(--color-card));
-  border-color: color-mix(in srgb, var(--status-danger) 42%, var(--color-border-default));
-  color: var(--status-danger);
+  background: var(--cdl-critical-bg);
+  border-color: var(--cdl-critical-border);
+  color: var(--cdl-critical-text);
 }
 
 .patient-card__vital--warning {
-  background: color-mix(in srgb, var(--status-warning) 13%, var(--color-card));
-  border-color: color-mix(in srgb, var(--status-warning) 42%, var(--color-border-default));
-  color: var(--status-warning);
+  background: var(--cdl-warning-bg);
+  border-color: var(--cdl-warning-border);
+  color: var(--cdl-warning-text);
 }
 
 .patient-card__scores,
@@ -633,37 +802,10 @@
   right: auto;
 }
 
-.patient-card__flag {
-  background: color-mix(in srgb, var(--patient-flag-color) 14%, var(--color-card));
-  border: 1px solid color-mix(in srgb, var(--patient-flag-color) 38%, var(--color-border-default));
-  color: var(--patient-flag-color);
-}
+/* Flag/score tone rules live with the pill inventory block above */
 
-.patient-card__scores span {
-  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-card));
-  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, var(--color-border-default));
-  color: var(--color-primary);
-}
-
-.patient-card__score--red {
-  background: color-mix(in srgb, var(--status-danger) 16%, var(--color-card));
-  border-color: color-mix(in srgb, var(--status-danger) 42%, var(--color-border-default));
-  color: var(--status-danger);
-}
-
-.patient-card__score--yellow {
-  background: color-mix(in srgb, var(--status-warning) 16%, var(--color-card));
-  border-color: color-mix(in srgb, var(--status-warning) 42%, var(--color-border-default));
-  color: var(--status-warning);
-}
-
-.patient-card__score--green {
-  background: color-mix(in srgb, var(--status-success, #22c55e) 14%, var(--color-card));
-  border-color: color-mix(in srgb, var(--status-success, #22c55e) 38%, var(--color-border-default));
-  color: var(--status-success, #22c55e);
-}
-
-.patient-card__timeline-button {
+.patient-card__timeline-button,
+.patient-card__room-display-button {
   align-items: center;
   align-self: end;
   background: color-mix(in srgb, var(--color-primary) 10%, var(--color-card));
@@ -737,7 +879,8 @@
     display: none;
   }
 
-  .patient-card__timeline-button {
+  .patient-card__timeline-button,
+  .patient-card__room-display-button {
     min-height: 34px;
   }
 
@@ -784,6 +927,7 @@
   .patient-card--highlighted,
   .patient-card--keyboard-selected,
   .patient-card__timeline-button:active,
+  .patient-card__room-display-button:active,
   .patient-card__mission-actions button:hover,
   .patient-card__mission-actions button:active,
   .patient-card__mission-actions button:focus-visible {

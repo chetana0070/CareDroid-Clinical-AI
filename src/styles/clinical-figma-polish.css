@@ -84,7 +84,7 @@
 }
 
 .cdl-situation-graphic-card--information::before {
-  background: var(--status-info, #0ea5e9);
+  background: var(--status-info, #64748b);
 }
 
 .cdl-situation-graphic-card--warning::before {
@@ -96,12 +96,12 @@
 }
 
 .cdl-situation-graphic-card--action::before {
-  background: color-mix(in srgb, var(--medical-accent, #0ea5e9) 70%, #6366f1);
+  background: color-mix(in srgb, var(--medical-accent, #64748b) 70%, #6366f1);
 }
 
 /* Tinted backgrounds — use !important to win over any cascade-order issues */
 .cdl-situation-graphic-card--information {
-  background: color-mix(in srgb, var(--status-info, #0ea5e9) 5%, #fff) !important;
+  background: color-mix(in srgb, var(--status-info, #64748b) 5%, #fff) !important;
 }
 
 .cdl-situation-graphic-card--warning {
@@ -121,7 +121,7 @@
 }
 
 .cdl-graphic-icon-badge--information {
-  box-shadow: 0 1px 4px rgba(14, 165, 233, 0.22);
+  box-shadow: 0 1px 4px rgba(100, 116, 139, 0.22);
 }
 
 .cdl-graphic-icon-badge--warning {
@@ -133,7 +133,7 @@
 }
 
 .cdl-graphic-icon-badge--brand {
-  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.26);
+  box-shadow: 0 2px 8px rgba(100, 116, 139, 0.26);
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -342,7 +342,7 @@
   );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    0 1px 3px rgba(14, 165, 233, 0.08);
+    0 1px 3px rgba(100, 116, 139, 0.08);
 }
 
 /* Section group labels — refined micro-caps */
@@ -399,17 +399,17 @@
 }
 
 .reception-work-queues__tab:hover:not(.reception-work-queues__tab--active) {
-  border-color: var(--app-accent-interactive, #0ea5e9);
+  border-color: #374151;
   color: var(--medical-ink, #111827);
-  background: color-mix(in srgb, var(--app-accent-interactive, #0ea5e9) 5%, var(--medical-white, #fff));
+  background: color-mix(in srgb, #374151 5%, var(--medical-white, #fff));
 }
 
 /* Active tab — solid filled */
 .reception-work-queues__tab--active {
-  background: var(--app-accent-interactive, #0ea5e9);
-  border-color: var(--app-accent-interactive, #0ea5e9);
+  background: #374151;
+  border-color: #374151;
   color: #ffffff;
-  box-shadow: 0 1px 4px rgba(14, 165, 233, 0.28);
+  box-shadow: 0 1px 4px rgba(100, 116, 139, 0.28);
 }
 
 /* Count badge */
@@ -462,7 +462,7 @@
 /* EMS offload gauge badge — refined */
 .cdl-ems-offload-gauge {
   border-radius: 10px;
-  box-shadow: 0 1px 4px rgba(14, 165, 233, 0.14);
+  box-shadow: 0 1px 4px rgba(100, 116, 139, 0.14);
   gap: 6px;
 }
 
@@ -556,9 +556,9 @@
   flex-wrap: nowrap;
 }
 
-/* Reception --primary search: bring width in line so all items fit in one row
+/* Reception emphasis search: bring width in line so all items fit in one row
    (Register 78px + this 340px + role-switcher 197px + account 300px + 3×12px gap = 951px < 1007px) */
-.emergency-app-shell__main-column .caredroid-header__lookup--primary {
+.emergency-app-shell__main-column .caredroid-header__lookup--emphasis {
   width: min(26vw, 340px);
   min-width: 200px;
   height: 34px;
@@ -612,37 +612,37 @@
 }
 
 /* ── 15C. Reception toolbar action buttons ───────────────────────
-   The pale --reception-surface-inset + #e0f2fe border = nearly
-   invisible on a white card. Promote to a concrete slate surface. */
+   Pure white surfaces — color comes from border and icon only. */
 
 .reception-desk-toolbar__action {
-  background: var(--medical-slate-50, #f8fafc) !important;
-  border-color: #94a3b8 !important;
-  border-width: 1.5px !important;
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  border-width: 1px !important;
   color: var(--medical-ink, #111827) !important;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: none !important;
 }
 
 .reception-desk-toolbar__action:hover:not(:disabled) {
-  background: var(--medical-slate-100, #f1f5f9) !important;
-  border-color: #64748b !important;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: none !important;
 }
 
-/* Primary "Register" button — keep its blue accent stronger */
+/* Primary "Register" button — white background, blue border accent */
 .reception-desk-toolbar__action--primary {
-  background: color-mix(in srgb, var(--app-accent-interactive, #0ea5e9) 12%, #fff) !important;
-  border-color: rgba(14, 165, 233, 0.55) !important;
-  color: var(--app-accent-interactive, #0369a1) !important;
+  background: #ffffff !important;
+  border-color: rgba(100, 116, 139, 0.5) !important;
+  color: #475569 !important;
 }
 
 .reception-desk-toolbar__action--primary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--app-accent-interactive, #0ea5e9) 20%, #fff) !important;
+  background: #f8fafc !important;
+  border-color: #64748b !important;
 }
 
-/* Escalate button — keep red accent */
+/* Escalate button — white background, red border accent */
 .reception-desk-toolbar__action--escalate {
-  background: color-mix(in srgb, #ef4444 10%, #fff) !important;
+  background: #ffffff !important;
   border-color: rgba(239, 68, 68, 0.45) !important;
   color: #b91c1c !important;
 }
@@ -652,11 +652,11 @@
    Inactive queue tabs need visible body; active tab keeps blue.  */
 
 .reception-desk-toolbar__queue-tab {
-  background: var(--medical-slate-50, #f8fafc) !important;
-  border-color: #94a3b8 !important;
-  border-width: 1.5px !important;
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  border-width: 1px !important;
   color: #374151 !important;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: none !important;
 }
 
 .reception-desk-toolbar__queue-tab:hover:not(.reception-desk-toolbar__action--active) {
@@ -666,58 +666,55 @@
 
 .reception-desk-toolbar__action--active.reception-desk-toolbar__queue-tab,
 .reception-desk-toolbar__queue-tab.reception-desk-toolbar__action--active {
-  background: var(--app-accent-interactive, #0ea5e9) !important;
-  border-color: var(--app-accent-interactive, #0ea5e9) !important;
-  color: #ffffff !important;
-  box-shadow: 0 1px 4px rgba(14, 165, 233, 0.28);
+  background: #ffffff !important;
+  border-color: #374151 !important;
+  color: var(--cd-brand-text, #475569) !important;
+  box-shadow: inset 0 0 0 1px #374151;
 }
 
 /* ── 15E. Unified intake phase nav (Registration tabs) ───────────
-   Pure-white inactive buttons with faint border = ghost text label.
-   Give them a concrete pill surface and clear inactive/active split. */
+   White surfaces with clear active/inactive split. */
 
 .unified-intake-phase-nav__btn {
-  background: var(--medical-slate-50, #f8fafc) !important;
-  border-color: #94a3b8 !important;
-  border-width: 1.5px !important;
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  border-width: 1px !important;
   color: #374151 !important;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: none !important;
   font-weight: 600;
 }
 
 .unified-intake-phase-nav__btn.is-active {
-  background: color-mix(in srgb, var(--reception-command-primary, #0ea5e9) 12%, #fff) !important;
-  border-color: color-mix(in srgb, var(--reception-command-primary, #0ea5e9) 55%, #94a3b8) !important;
-  color: var(--reception-command-primary-strong, #1d4ed8) !important;
-  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.14);
+  background: #ffffff !important;
+  border-color: rgba(100, 116, 139, 0.5) !important;
+  color: #475569 !important;
+  box-shadow: none !important;
   font-weight: 700;
 }
 
 /* ── 15F. Quick complaint chips ──────────────────────────────────
-   --reception-command-inset may resolve to a near-transparent
-   value. Anchor with a solid off-white slate base.               */
+   White surfaces with clear selected state. */
 
 .reception-quick-complaints__chip {
-  background: var(--medical-slate-50, #f8fafc) !important;
-  border-color: #94a3b8 !important;
-  border-width: 1.5px !important;
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  border-width: 1px !important;
   color: #374151 !important;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
 }
 
 .reception-quick-complaints__chip.is-active,
 .reception-quick-complaints__chip:hover {
-  background: color-mix(in srgb, var(--reception-command-primary, #0ea5e9) 10%, #fff) !important;
-  border-color: color-mix(in srgb, var(--reception-command-primary, #0ea5e9) 50%, #94a3b8) !important;
-  color: var(--reception-command-primary-strong, #1d4ed8) !important;
+  background: #f8fafc !important;
+  border-color: rgba(100, 116, 139, 0.5) !important;
+  color: #475569 !important;
 }
 
 /* ── 15G. Reception work-queue tabs (inactive state) ─────────────
-   Section 8 sets white background — still low-contrast on white
-   card. Promote inactive tabs to slate-50 so they read as pills. */
+   White surfaces for all queue tabs. */
 
 .reception-work-queues__tab:not(.reception-work-queues__tab--active) {
-  background: var(--medical-slate-50, #f8fafc);
+  background: #ffffff;
   border-color: #94a3b8;
   border-width: 1.5px;
   color: #374151;

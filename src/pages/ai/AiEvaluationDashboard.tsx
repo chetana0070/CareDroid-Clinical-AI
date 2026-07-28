@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  CategoryBarChart,
-  MetricCard,
-  VisualizationPanel,
-} from '../../components/dashboard/DashboardVisualizations';
+import { MetricCard, VisualizationPanel } from '../../components/dashboard/DashboardVisualizations';
+import { CategoryBarChart } from '../../components/dashboard/DashboardCharts';
 import { GraphicIconBadge } from '../../components/graphics/CdlGraphicKit';
 import StateSourceNotice from '../../components/StateSourceNotice';
 import { CANONICAL_ROUTES } from '../../config/routes.config';
@@ -59,7 +56,7 @@ export default function AiEvaluationDashboard() {
   const seedCount =
     honesty?.seedRunCount ??
     (Array.isArray(dashboard.runs)
-      ? dashboard.runs.filter((run: { seedOnly?: boolean }) => run.seedOnly !== false).length
+      ? dashboard.runs.filter((run: Record<string, unknown>) => run.seedOnly !== false).length
       : 0);
 
   return (

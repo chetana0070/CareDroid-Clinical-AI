@@ -1,7 +1,13 @@
 import './theme-init';
+/* CDL v2 foundation first — single SSOT for tokens, severity, elevation, shell. */
+import './styles/cdl-v2/index.css';
+/* Legacy design-system cascade remains until full route migration completes. */
 import './styles/design-system.css';
 import './styles/alarm-system.css';
 import './styles/inline-style-utilities.css';
+/* Re-assert CDL shell + dual-mode pills after legacy cascade (prevents white-on-light pills). */
+import './styles/cdl-v2/shell-readability.css';
+import './styles/cdl-v2/pills.css';
 import './index.css';
 
 import React from 'react';
@@ -58,8 +64,13 @@ if (import.meta.env.DEV) {
   void ensureBackendReachabilityProbed();
 }
 
+// Cycle 68: only warm the reception workspace when already on a reception-ish path.
+// Unconditional preload forced reception (and its graph) into every session with the flag on.
 if (isReceptionFirstUxEnabled()) {
-  void import('./pages/emergency/ReceptionWorkspace');
+  const path = typeof window !== 'undefined' ? window.location.pathname : '';
+  if (/\/(reception|intake)(\/|$)/i.test(path) || path === '/' || path === '') {
+    void import('./pages/emergency/ReceptionWorkspace');
+  }
 }
 
 const clearDevelopmentServiceWorkers = () => {

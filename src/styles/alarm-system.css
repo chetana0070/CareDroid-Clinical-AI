@@ -10,14 +10,16 @@
   --alarm-critical-border: color-mix(in srgb, #dc2626 55%, #e2e8f0);
   --alarm-critical-text: #991b1b;
 
-  --alarm-warning: #d97706;
+  /* Badge uses solid warning as bg + white text — #d97706 only hits 3.19:1
+     (WCAG AA needs 4.5:1 for 9px badge type). Darken to amber-700. */
+  --alarm-warning: #b45309;
   --alarm-warning-bg: color-mix(in srgb, #f59e0b 14%, #ffffff);
-  --alarm-warning-border: color-mix(in srgb, #f59e0b 50%, #e2e8f0);
-  --alarm-warning-text: #92400e;
+  --alarm-warning-border: color-mix(in srgb, #b45309 50%, #e2e8f0);
+  --alarm-warning-text: #78350f;
 
-  --alarm-info: #0284c7;
-  --alarm-info-bg: color-mix(in srgb, #0ea5e9 10%, #ffffff);
-  --alarm-info-border: color-mix(in srgb, #0ea5e9 40%, #e2e8f0);
+  --alarm-info: #475569;
+  --alarm-info-bg: color-mix(in srgb, #64748b 10%, #ffffff);
+  --alarm-info-border: color-mix(in srgb, #64748b 40%, #e2e8f0);
   --alarm-info-text: #075985;
 
   --alarm-ok: #059669;
@@ -28,7 +30,7 @@
   --alarm-neutral-bg: #ffffff;
   --alarm-neutral-border: var(--medical-border, #e2e8f0);
   --alarm-neutral-text: var(--medical-ink, #111827);
-  --alarm-neutral-label: var(--medical-ink-muted, #64748b);
+  --alarm-neutral-label: var(--medical-ink-muted, #475569);
 }
 
 /* ── KPI chip (chrome + strips) ── */
@@ -256,6 +258,14 @@
   max-width: 100%;
   overflow-x: auto;
   scrollbar-width: thin;
+  /* When chips overflow the rail's width, the last one gets clipped by
+     overflow-x with no visual cue that it's scrollable — reads as a broken
+     render (a word cut mid-letter) rather than "scroll for more". Fade the
+     trailing edge instead of hard-clipping it; mask-image fades the alpha
+     channel rather than compositing a background color, so it looks correct
+     regardless of theme or whatever sits behind the rail. */
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(to right, black calc(100% - 18px), transparent 100%);
 }
 
 /* ── List / table row alarming ── */

@@ -1,5 +1,6 @@
 import { apiFetch, getApiErrorMessage, parseApiResponse } from './apiClient';
 import { serializePatientForBackendApi } from './patientArrivalBackendSync';
+import logger from '../utils/logger';
 
 /**
  * Canonical CareDroid frontend facade.
@@ -20,8 +21,10 @@ export const EMERGENCY_OS_API_ENDPOINTS = Object.freeze({
   patientDocumentArtifacts: '/api/emergency/patients',
   journey: '/api/emergency/journey',
   ems: '/api/emergency/ems',
+  emsHandoff: '/api/emergency/ems/handoff',
   receptionSnapshot: '/api/emergency/reception/snapshot',
   receptionHandoff: '/api/emergency/reception/handoff',
+  receptionEscalation: '/api/emergency/reception/escalation',
   triageAssist: '/api/emergency/triage/assist',
   patientOrchestration: '/api/emergency/patients',
   intake: '/api/emergency/intake',
@@ -92,8 +95,10 @@ export const ACTIVE_EMERGENCY_OS_API_ENDPOINT_KEYS = Object.freeze([
   'patients',
   'journey',
   'ems',
+  'emsHandoff',
   'receptionSnapshot',
   'receptionHandoff',
+  'receptionEscalation',
   'triageAssist',
   'intake',
   'smartIntakeVerticalSlice',
@@ -184,10 +189,20 @@ export const fetchEmergencyPatients = () =>
   requestEmergencyJson(EMERGENCY_OS_API_ENDPOINTS.patients);
 export const fetchPatientJourney = () => requestEmergencyJson(EMERGENCY_OS_API_ENDPOINTS.journey);
 export const fetchEMSIntake = () => requestEmergencyJson(EMERGENCY_OS_API_ENDPOINTS.ems);
+export const postEmsHandoff = (payload) =>
+  requestEmergencyJson(EMERGENCY_OS_API_ENDPOINTS.emsHandoff, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 export const fetchReceptionSnapshot = () =>
   requestEmergencyJson(EMERGENCY_OS_API_ENDPOINTS.receptionSnapshot);
 export const postReceptionHandoff = (payload) =>
   requestEmergencyJson(EMERGENCY_OS_API_ENDPOINTS.receptionHandoff, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+export const postReceptionEscalation = (payload) =>
+  requestEmergencyJson(EMERGENCY_OS_API_ENDPOINTS.receptionEscalation, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -266,7 +281,11 @@ export function persistCopilotInteractionSafely(payload: any = {}) {
     requiresHumanReview: true,
     safetyCheckPassed: true,
     ...payload,
-  }).catch(() => undefined);
+  }).catch((error) => {
+    logger.warn('Failed to persist copilot interaction audit trail', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  });
 }
 export const fetchEmergencyWorkflowLogs = () =>
   requestEmergencyJson(EMERGENCY_OS_API_ENDPOINTS.workflowLogs);
@@ -381,16 +400,22 @@ export const evaluateHybridDigitalTwinScenario = (payload: any = {}) =>
     body: JSON.stringify(payload),
   });
 
-export const createEmergencyPatient = (patient) =>
+export const createEmergencyPatient = (patient, options: { confirmDuplicateOverride?: boolean } = {}) =>
   requestEmergencyJson(EMERGENCY_OS_API_ENDPOINTS.patients, {
     method: 'POST',
-    body: JSON.stringify(serializePatientForBackendApi(patient)),
+    body: JSON.stringify({
+      ...serializePatientForBackendApi(patient),
+      confirmDuplicateOverride: options.confirmDuplicateOverride,
+    }),
   });
 
-export const createSmartIntakePatient = (patient) =>
+export const createSmartIntakePatient = (patient, options: { confirmDuplicateOverride?: boolean } = {}) =>
   requestEmergencyJson(EMERGENCY_OS_API_ENDPOINTS.intake, {
     method: 'POST',
-    body: JSON.stringify(serializePatientForBackendApi(patient)),
+    body: JSON.stringify({
+      ...serializePatientForBackendApi(patient),
+      confirmDuplicateOverride: options.confirmDuplicateOverride,
+    }),
   });
 
 export const runSmartIntakeVerticalSlice = (payload: any = {}) =>
@@ -414,6 +439,7 @@ export default Object.freeze({
   fetchEMSIntake,
   fetchReceptionSnapshot,
   postReceptionHandoff,
+  postReceptionEscalation,
   postTriageAssist,
   fetchSmartIntake,
   fetchEmergencyQueues,

@@ -21,6 +21,8 @@ import { coerceScreenModeForRole } from './emergencyScreenModeAccessModel';
 /** Stable ED role ids — kept local to avoid circular imports with emergencyRolePermissions.js */
 export const EMERGENCY_ROLE_ID = Object.freeze({
   admin: 'admin',
+  /** Technical admin — no PHI/clinical grants (Stage D alignment). */
+  itAdmin: 'it_admin',
   edManager: 'ed_manager',
   chargeNurse: 'charge_nurse',
   triageNurse: 'triage_nurse',
@@ -60,6 +62,7 @@ export const DEFAULT_SCREEN_MODE_BY_ROLE: Record<EmergencyRoleId, CareDroidScree
     [EMERGENCY_ROLE_ID.emsCoordinator]: CARE_DROID_SCREEN_MODES.ems,
     [EMERGENCY_ROLE_ID.edManager]: CARE_DROID_SCREEN_MODES.commandCenter,
     [EMERGENCY_ROLE_ID.admin]: CARE_DROID_SCREEN_MODES.admin,
+    [EMERGENCY_ROLE_ID.itAdmin]: CARE_DROID_SCREEN_MODES.admin,
     [EMERGENCY_ROLE_ID.readOnlyViewer]: CARE_DROID_SCREEN_MODES.readOnlyWhiteboard,
     [EMERGENCY_ROLE_ID.publicDisplay]: CARE_DROID_SCREEN_MODES.publicWaiting,
   });

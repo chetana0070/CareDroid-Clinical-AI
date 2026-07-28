@@ -45,7 +45,7 @@
   min-height: 40px;
   border: 1px solid var(--copilot-border);
   border-radius: 12px;
-  background: color-mix(in srgb, var(--copilot-bg) 88%, #f0f9ff);
+  background: color-mix(in srgb, var(--copilot-bg) 88%, #f1f5f9);
   color: var(--copilot-text);
   font: inherit;
   font-size: 13px;
@@ -77,7 +77,33 @@
 }
 
 .ed-copilot-typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #475569;
   animation: ed-copilot-typing 900ms infinite ease-in-out;
+}
+
+.ed-copilot-typing-dot:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.ed-copilot-typing-dot:nth-child(2) {
+  animation-delay: 120ms;
+}
+
+.ed-copilot-typing-dot:nth-child(3) {
+  animation-delay: 240ms;
+}
+
+.ed-copilot-typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.ed-copilot-typing-indicator-wrap {
+  align-self: flex-start;
 }
 
 .ed-copilot-panel__message-attachments {
@@ -346,24 +372,9 @@
   }
 }
 
-.ed-copilot-launch {
-  position: fixed;
-  right: 16px;
-  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-  z-index: 40;
-  border: 1px solid color-mix(in srgb, var(--app-accent-interactive, var(--status-info)) 40%, transparent);
-  border-radius: 999px;
-  padding: 10px 14px;
-  background: color-mix(in srgb, var(--color-surface, var(--app-surface-1, #ffffff)) 92%, #f0f9ff);
-  color: var(--color-text-primary, var(--medical-ink, #111827));
-  font-size: 0.8125rem;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 10px 28px rgba(2, 6, 23, 0.35);
-}
-
-.ed-copilot-launch:hover,
-.ed-copilot-launch:focus-visible {
-  border-color: color-mix(in srgb, var(--app-accent-interactive, var(--status-info)) 70%, transparent);
-  transform: translateY(-1px);
-}
+/* .ed-copilot-launch lives in components/app-shell.css, not here: AppShell
+   renders the launch button eagerly (whenever the Copilot panel is closed),
+   but this stylesheet only loads as a side effect of lazily importing
+   CopilotPanel — so the button rendered on every page load before a user
+   ever opens Copilot once had no styling at all (fell back to a bare,
+   full-height <button>, stretched by the app shell's flex layout). */

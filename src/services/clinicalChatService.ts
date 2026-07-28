@@ -1,12 +1,14 @@
 import { apiFetch, buildApiUrl, parseApiResponse } from './apiClient';
 import { buildAIAuditEvent, logAIAuditEvent, previewAIText } from '../lib/ai/audit/logger';
 import { invokeUnifiedAiConversational } from './careDroidUnifiedAiNode';
+import { UNIFIED_AI_MODEL } from '../lib/ai/client';
 
 import {
   REGISTRY_ID_TO_ORCHESTRATOR_TOOL,
   registryIdToOrchestratorTool,
 } from '../data/clinicalCatalogWiring';
 import { buildKnowledgeBaseAssistantContext } from '../data/customerKnowledgeBase';
+import { accountableFromGatewayPayload } from '../utils/accountableFromGateway';
 
 export { REGISTRY_ID_TO_ORCHESTRATOR_TOOL };
 
@@ -104,6 +106,7 @@ export async function sendClinicalChatMessage({
       result: 'allowed',
       requestType: requestType || 'UNKNOWN',
       inputPreview: previewAIText(message),
+      model: UNIFIED_AI_MODEL,
       safety: { requiresHumanReview: true, blocked: false, reasons: [] },
     }),
   );
@@ -257,6 +260,21 @@ export function normalizeAiFoundationMetadata(metadata: any = {}) {
             ]
           : [];
 
+  let unifiedNode = foundation.unifiedNode || metadata.unifiedNode;
+  if (!unifiedNode && metadata?.intentClassification?.nodeId) {
+    const ic = metadata.intentClassification;
+    unifiedNode = {
+      nodeId: ic.nodeId,
+      method: ic.method,
+      primaryIntent: ic.primaryIntent,
+      toolId: ic.toolId,
+      artifactType: ic.artifactType,
+      artifactRouteConfidence: ic.artifactRouteConfidence,
+      confidence: ic.confidence,
+      isEmergency: ic.isEmergency,
+    };
+  }
+
   return {
     ...foundation,
     selectedExperts,
@@ -274,6 +292,7 @@ export function normalizeAiFoundationMetadata(metadata: any = {}) {
       [],
     requiresHumanReview:
       foundation.requiresHumanReview ?? metadata.safety?.requiresHumanReview ?? false,
+    unifiedNode,
   };
 }
 
@@ -327,11 +346,20 @@ export function mapChatResponseToAssistantMessage(data) {
     }
   }
 
+  // Architect Mode Stage G: always attach accountable envelope for UI rendering.
+  const accountableRecommendation =
+    data.accountableRecommendation ||
+    accountableFromGatewayPayload(data, data.response || data.content || '');
+
   return {
     role: 'assistant',
-    content: data.response || 'I could not generate a response.',
+    content: data.response || accountableRecommendation?.content || 'I could not generate a response.',
     citations: data.citations || [],
-    confidence: data.confidence,
+    confidence:
+      data.confidence ??
+      (accountableRecommendation?.confidence !== undefined
+        ? accountableRecommendation.confidence
+        : undefined),
     suggestions: Array.isArray(data.suggestions) ? data.suggestions : [],
     ragContext: data.ragContext,
     sourcePanel,
@@ -340,6 +368,7 @@ export function mapChatResponseToAssistantMessage(data) {
     metadata: data.metadata,
     aiFoundation,
     aiGateway: data.metadata?.aiGateway,
+    accountableRecommendation,
     timestamp: new Date(),
   };
 }

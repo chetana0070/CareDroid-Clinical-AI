@@ -27,8 +27,9 @@
   --cdl-zone-gap: var(--app-layout-section-gap);
   --cdl-panel-gap: var(--app-layout-panel-gap);
   --cdl-zone-padding: var(--cdl-panel-gap);
-  --cdl-secondary-opacity: 0.72;
-  --cdl-tertiary-opacity: 0.56;
+  /* Opacity must not wash operational text — use ink tokens for hierarchy */
+  --cdl-secondary-opacity: 0.92;
+  --cdl-tertiary-opacity: 0.88;
 
   /* —— Motion —— */
   --cdl-motion-fast: 120ms;
@@ -55,7 +56,7 @@
 }
 
 .cdl-shell__header {
-  min-height: var(--cdl-header-height, 56px);
+  min-height: var(--cdl-header-height, 52px);
   background: var(--cdl-header-bg, var(--medical-white));
   border-bottom: 0;
   box-shadow: 0 1px 0 var(--cdl-header-border, color-mix(in srgb, var(--medical-border) 50%, transparent));
@@ -480,12 +481,24 @@
   border-color: color-mix(in srgb, var(--semantic-critical) 35%, var(--app-border));
 }
 
+.hospital-command-center__metric-card--critical .hospital-command-center__metric-value {
+  color: var(--semantic-critical);
+}
+
 .hospital-command-center__metric-card--warning {
   border-color: color-mix(in srgb, var(--semantic-warning) 35%, var(--app-border));
 }
 
+.hospital-command-center__metric-card--warning .hospital-command-center__metric-value {
+  color: var(--semantic-warning);
+}
+
 .hospital-command-center__metric-card--watch {
   border-color: color-mix(in srgb, var(--semantic-operational-status) 30%, var(--app-border));
+}
+
+.hospital-command-center__metric-card--watch .hospital-command-center__metric-value {
+  color: var(--semantic-operational-status);
 }
 
 .hospital-command-center__metric-value,

@@ -203,6 +203,16 @@ export default defineConfig(({ mode }) => {
               return 'vendor';
             }
 
+            // Audited Cycle 84: unlike the Calculators/Analytics fusion bugs,
+            // this grouping is NOT forcing eagerness onto otherwise-lazy code.
+            // Disabling it experimentally made the anonymous entry chunk grow
+            // by ~1MB (the exact size of this chunk) instead of splitting
+            // that weight into its own lazy chunk -- Rollup's own static
+            // reachability analysis confirms unified-navigation.config (used
+            // directly by AppShell.tsx on every page) and everything grouped
+            // here are genuinely only reachable from the eager entry graph.
+            // Naming them keeps that necessary weight in its own cacheable,
+            // clearly-labeled chunk instead of bloating the anonymous entry.
             if (
               normalizedId.includes('/src/config/unified-navigation') ||
               normalizedId.includes('/src/config/navigation') ||
@@ -228,13 +238,23 @@ export default defineConfig(({ mode }) => {
             if (normalizedId.includes('/src/pages/tools/psychiatryScreeningCalculators')) return 'calculators-psychiatry-screening';
             if (normalizedId.includes('/src/pages/tools/hospitalOperationsCalculators')) return 'calculators-hospital-operations';
             if (normalizedId.includes('/src/pages/tools/hepatologyGiCalculators')) return 'calculators-hepatology-gi';
-            if (normalizedId.includes('pages/tools/Calculators')) return 'calculators';
+            // Deliberately NO manual chunk for pages/tools/Calculators.tsx: forcing
+            // it into a named chunk made Rollup fuse ~200 shared startup modules
+            // (apiClient, UserContext, env config, ...) into that chunk, which made
+            // the entry statically import it -- executing the entire calculator
+            // catalog (plus every specialty chunk above) on every page load. With
+            // no manual assignment it stays in the lazily-loaded tools graph.
             if (normalizedId.includes('ClinicalToolCatalog')) return 'clinical-catalog';
             if (normalizedId.includes('pages/Dashboard')) return 'dashboard';
-            if (
-              normalizedId.includes('AnalyticsDashboard') ||
-              normalizedId.includes('CostAnalyticsDashboard')
-            ) return 'analytics';
+            // Deliberately NO manual chunk for AnalyticsDashboard/CostAnalyticsDashboard
+            // (same reasoning as Calculators.tsx above): both are reached exclusively
+            // through lazyRoute() in platformConsoleRouteTree.tsx. Forcing them into a
+            // named 'analytics' chunk fused ~200 shared startup modules into it the
+            // same way, making the entry statically modulepreload it -- and pulled its
+            // own recharts import along for the ride, eagerly preloading vendor-charts
+            // (252KB) on every route. Confirmed via a real build: removing this rule
+            // dropped both 'analytics' and 'vendor-charts' out of the entry's
+            // modulepreload list entirely (measured before/after, not assumed).
             if (normalizedId.includes('components/charts/')) return 'charts';
 
             return undefined;

@@ -1,10 +1,23 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Logger,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import type { Request } from 'express';
 import { TenantContext } from '../tenant-context/tenant-context.decorator';
 import type { TenantContext as TenantContextValue } from '../tenant-context/tenant-context.types';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthorizationGuard } from '../auth/guards/authorization.guard';
+import { RequirePermission } from '../auth/decorators/permissions.decorator';
+import { Permission } from '../auth/enums/permission.enum';
 import {
   FederatedLearningService,
   HybridDigitalTwinService,
@@ -32,6 +45,7 @@ import {
   ReassessmentService,
   ReferralService,
   SmartIntakeService,
+  type SmartIntakeCreateInput,
   WorkflowActionLogService,
 } from './emergency-os.services';
 import { PatientDocumentArtifactService } from './patient-document-artifact.service';
@@ -49,7 +63,7 @@ import type {
   RecordClinicalCalculatorDto,
   RecordCopilotInteractionDto,
 } from './clinical-decision-support.types';
-import type { EmergencyOsSettingsPatch, EmergencyPatient } from './emergency-os.types';
+import type { EmergencyOsSettingsPatch } from './emergency-os.types';
 import type {
   ExtractDocumentArtifactsInput,
   PatientDocumentArtifactReviewInput,
@@ -62,6 +76,8 @@ import type { CreateOcrJobInput, OcrFieldReviewInput } from './ocr-intake.types'
 @UseGuards(AuthGuard('jwt'), AuthorizationGuard)
 @Controller('emergency')
 export class EmergencyOsController {
+  private readonly logger = new Logger(EmergencyOsController.name);
+
   constructor(
     private readonly whiteboardService: EmergencyWhiteboardService,
     private readonly patientService: EmergencyPatientService,
@@ -131,13 +147,15 @@ export class EmergencyOsController {
     );
   }
 
+  @RequirePermission(Permission.READ_PHI)
   @Get('patients')
   getPatients() {
     return this.patientService.getPatientEnvelope();
   }
 
+  @RequirePermission(Permission.WRITE_PHI)
   @Post('patients')
-  createPatient(@Body() dto: Partial<EmergencyPatient>) {
+  createPatient(@Body() dto: SmartIntakeCreateInput) {
     return this.smartIntakeService.createFromIntake(dto);
   }
 
@@ -186,31 +204,51 @@ export class EmergencyOsController {
     return this.documentArtifactService.getEnvelope(patientId);
   }
 
+  @RequirePermission(Permission.WRITE_PHI)
   @Post('patients/:patientId/document-artifacts/extract')
-  extractPatientDocumentArtifacts(
+  async extractPatientDocumentArtifacts(
     @Param('patientId') patientId: string,
     @Body() body: ExtractDocumentArtifactsInput,
+    @TenantContext() tenantContext: TenantContextValue | undefined,
+    @Req() request: Request,
   ) {
+    await this.patientAuditService.logPatientAccess({
+      request,
+      tenantContext,
+      patientId,
+      resource: `emergency/patients/${patientId}/document-artifacts/extract`,
+    });
     return this.documentArtifactService.extract(patientId, { ...body, patientId });
   }
 
+  @RequirePermission(Permission.WRITE_PHI)
   @Patch('patients/:patientId/document-artifacts/:artifactId/review')
-  reviewPatientDocumentArtifact(
+  async reviewPatientDocumentArtifact(
     @Param('patientId') patientId: string,
     @Param('artifactId') artifactId: string,
     @Body() body: PatientDocumentArtifactReviewInput,
+    @TenantContext() tenantContext: TenantContextValue | undefined,
+    @Req() request: Request,
   ) {
+    await this.patientAuditService.logPatientAccess({
+      request,
+      tenantContext,
+      patientId,
+      resource: `emergency/patients/${patientId}/document-artifacts/${artifactId}/review`,
+    });
     return this.documentArtifactService.review(patientId, artifactId, {
       ...body,
       artifactId,
     });
   }
 
+  @RequirePermission(Permission.WRITE_PHI)
   @Post('intake/ocr-jobs')
   createOcrJob(@Body() body: CreateOcrJobInput) {
     return this.ocrIntakeService.createJob(body);
   }
 
+  @RequirePermission(Permission.READ_PHI)
   @Get('intake/ocr-jobs')
   listOcrJobs(
     @Query('patientId') patientId?: string,
@@ -219,11 +257,13 @@ export class EmergencyOsController {
     return { jobs: this.ocrIntakeService.listJobs({ patientId, intakeSessionId }) };
   }
 
+  @RequirePermission(Permission.READ_PHI)
   @Get('intake/ocr-health')
   getOcrIntakeHealth() {
     return this.ocrIntakeService.getHealth();
   }
 
+  @RequirePermission(Permission.READ_PHI)
   @Get('intake/ocr-jobs/:jobId')
   async getOcrJob(
     @Param('jobId') jobId: string,
@@ -242,6 +282,7 @@ export class EmergencyOsController {
     return job;
   }
 
+  @RequirePermission(Permission.WRITE_PHI)
   @Post('intake/ocr-jobs/:jobId/fields/:field/review')
   reviewOcrJobField(
     @Param('jobId') jobId: string,
@@ -251,9 +292,15 @@ export class EmergencyOsController {
     return this.ocrIntakeService.reviewField(jobId, field, body);
   }
 
+  @RequirePermission(Permission.WRITE_PHI)
   @Post('intake/ocr-jobs/:jobId/apply')
-  applyOcrJobToIntake(@Param('jobId') jobId: string, @Body() body: { actor?: string }) {
-    return this.ocrIntakeService.applyToIntake(jobId, body?.actor || 'unknown');
+  applyOcrJobToIntake(
+    @Param('jobId') jobId: string,
+    @Body() body: { actor?: string; autoAcceptHighConfidence?: boolean },
+  ) {
+    return this.ocrIntakeService.applyToIntake(jobId, body?.actor || 'unknown', {
+      autoAcceptHighConfidence: body?.autoAcceptHighConfidence,
+    });
   }
 
   @Get('patients/:patientId/orchestration')
@@ -301,11 +348,52 @@ export class EmergencyOsController {
     return this.emsIntakeService.getEMSIntake();
   }
 
+  @RequirePermission(Permission.WRITE_PHI)
+  @Post('ems/handoff')
+  postEmsHandoff(
+    @Body()
+    body: {
+      arrivalId?: string;
+      patientId?: string;
+      actorName?: string;
+      unitId?: string;
+      unitName?: string;
+      chiefComplaint?: string;
+      handoffAcceptedAt?: string;
+      handoffStartedAt?: string;
+      arrivedAt?: string;
+      checklist?: Record<string, unknown>;
+      notes?: string;
+    },
+  ) {
+    return this.emsIntakeService.completeHandoff(body);
+  }
+
+  @RequirePermission(Permission.READ_PHI)
   @Get('reception/snapshot')
   getReceptionSnapshot() {
     return this.receptionWorkspaceService.getSnapshot();
   }
 
+  @RequirePermission(Permission.WRITE_PHI)
+  @Post('reception/escalation')
+  postReceptionEscalation(
+    @Body()
+    body: {
+      reasonId?: string;
+      reasonLabel?: string;
+      patientId?: string;
+      detail?: string;
+      actorName?: string;
+      actorStaffId?: string;
+      severity?: 'Info' | 'Warning' | 'Critical';
+      notifyTargets?: Array<'triage' | 'charge'>;
+    },
+  ) {
+    return this.receptionWorkspaceService.raiseEscalation(body || {});
+  }
+
+  @RequirePermission(Permission.WRITE_PHI)
   @Post('reception/handoff')
   async postReceptionHandoff(
     @Body()
@@ -327,7 +415,13 @@ export class EmergencyOsController {
     if (!triageAssist && body.patientId) {
       try {
         triageAssist = await this.orchestrationService.buildTriageAssist(body.patientId, body);
-      } catch {
+      } catch (error) {
+        // D9: keep deliberate fallback, but surface the degradation for ops.
+        this.logger.warn(
+          `buildTriageAssist failed during reception handoff for patient ${body.patientId}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
         triageAssist = null;
       }
     }
@@ -376,23 +470,28 @@ export class EmergencyOsController {
     };
   }
 
+  @RequirePermission(Permission.READ_PHI)
   @Get('intake')
   getIntake() {
     return this.smartIntakeService.getSmartIntake();
   }
 
+  @RequirePermission(Permission.WRITE_PHI)
   @Post('intake')
-  createIntakePatient(@Body() dto: Partial<EmergencyPatient>) {
+  createIntakePatient(@Body() dto: SmartIntakeCreateInput) {
     return this.smartIntakeService.createFromIntake(dto);
   }
 
+  @RequirePermission(Permission.WRITE_PHI)
   @Post('intake/vertical-slice')
   createSmartIntakeVerticalSlice(
     @Body()
-    dto: Partial<EmergencyPatient> & { patient?: Partial<EmergencyPatient>; staffId?: string },
+    dto: SmartIntakeCreateInput & { patient?: SmartIntakeCreateInput; staffId?: string },
   ) {
     const slice = this.smartIntakeService.createVerticalSlice({
       ...(dto.patient || dto),
+      confirmDuplicateOverride:
+        dto.patient?.confirmDuplicateOverride ?? dto.confirmDuplicateOverride,
       staffId: dto.staffId,
     });
     const whiteboard = this.whiteboardService.getWhiteboard().data;

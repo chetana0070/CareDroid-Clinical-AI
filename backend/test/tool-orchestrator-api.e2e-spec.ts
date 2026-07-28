@@ -34,6 +34,23 @@ import { HasBledService } from '../src/modules/medical-control-plane/tool-orches
 import { TimiUaNstemiService } from '../src/modules/medical-control-plane/tool-orchestrator/services/timi-ua-nstemi.service';
 import { FraminghamRiskService } from '../src/modules/medical-control-plane/tool-orchestrator/services/framingham-risk.service';
 import { GraceAcsService } from '../src/modules/medical-control-plane/tool-orchestrator/services/grace-acs.service';
+import { CorrectedCalciumService } from '../src/modules/medical-control-plane/tool-orchestrator/services/corrected-calcium.service';
+import { CorrectedSodiumService } from '../src/modules/medical-control-plane/tool-orchestrator/services/corrected-sodium.service';
+import { FenaService } from '../src/modules/medical-control-plane/tool-orchestrator/services/fena.service';
+import { FeureaService } from '../src/modules/medical-control-plane/tool-orchestrator/services/feurea.service';
+import { OsmolalGapService } from '../src/modules/medical-control-plane/tool-orchestrator/services/osmolal-gap.service';
+import { SerumOsmolalityService } from '../src/modules/medical-control-plane/tool-orchestrator/services/serum-osmolality.service';
+import { Pao2Fio2RatioService } from '../src/modules/medical-control-plane/tool-orchestrator/services/pao2-fio2-ratio.service';
+import { RoxIndexService } from '../src/modules/medical-control-plane/tool-orchestrator/services/rox-index.service';
+import { MewsService } from '../src/modules/medical-control-plane/tool-orchestrator/services/mews.service';
+import { RevisedTraumaScoreService } from '../src/modules/medical-control-plane/tool-orchestrator/services/revised-trauma-score.service';
+import { HuntHessScaleService } from '../src/modules/medical-control-plane/tool-orchestrator/services/hunt-hess-scale.service';
+import { IchScoreService } from '../src/modules/medical-control-plane/tool-orchestrator/services/ich-score.service';
+import { FourScoreService } from '../src/modules/medical-control-plane/tool-orchestrator/services/four-score.service';
+import { ModifiedRankinScaleService } from '../src/modules/medical-control-plane/tool-orchestrator/services/modified-rankin-scale.service';
+import { PecarnHeadService } from '../src/modules/medical-control-plane/tool-orchestrator/services/pecarn-head.service';
+import { WellsDvtService } from '../src/modules/medical-control-plane/tool-orchestrator/services/wells-dvt.service';
+import { AbgInterpreterService } from '../src/modules/medical-control-plane/tool-orchestrator/services/abg-interpreter.service';
 import { ToolResult } from '../src/modules/medical-control-plane/tool-orchestrator/entities/tool-result.entity';
 import { ToolMetricsService } from '../src/modules/metrics/tool-metrics.service';
 import { AuditService } from '../src/modules/audit/audit.service';
@@ -92,6 +109,23 @@ describe('Tool Orchestrator API (e2e)', () => {
         TimiUaNstemiService,
         FraminghamRiskService,
         GraceAcsService,
+        CorrectedCalciumService,
+        CorrectedSodiumService,
+        FenaService,
+        FeureaService,
+        OsmolalGapService,
+        SerumOsmolalityService,
+        Pao2Fio2RatioService,
+        RoxIndexService,
+        MewsService,
+        RevisedTraumaScoreService,
+        HuntHessScaleService,
+        IchScoreService,
+        FourScoreService,
+        ModifiedRankinScaleService,
+        PecarnHeadService,
+        WellsDvtService,
+        AbgInterpreterService,
         {
           provide: AuditService,
           useValue: mockAuditService,
@@ -135,7 +169,7 @@ describe('Tool Orchestrator API (e2e)', () => {
         .expect(200)
         .expect((res) => {
           expect(res.body.tools).toBeDefined();
-          expect(res.body.count).toBe(22);
+          expect(res.body.count).toBe(39);
         });
     });
 
@@ -201,7 +235,7 @@ describe('Tool Orchestrator API (e2e)', () => {
         .get('/tools/statistics')
         .expect(200)
         .expect((res) => {
-          expect(res.body.totalTools).toBe(22);
+          expect(res.body.totalTools).toBe(39);
         });
     });
   });

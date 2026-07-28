@@ -584,7 +584,7 @@
 
 .simple-tool-chip-btn:hover {
   background: var(--app-overlay-on-surface-strong);
-  border-color: color-mix(in srgb, var(--app-accent-interactive) 35%, var(--app-panel-border));
+  border-color: color-mix(in srgb, #374151 35%, var(--app-panel-border));
 }
 
 .simple-tool-result-panel {

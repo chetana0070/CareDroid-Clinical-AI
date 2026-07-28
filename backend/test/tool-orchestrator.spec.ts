@@ -30,6 +30,23 @@ import { HasBledService } from '../src/modules/medical-control-plane/tool-orches
 import { TimiUaNstemiService } from '../src/modules/medical-control-plane/tool-orchestrator/services/timi-ua-nstemi.service';
 import { FraminghamRiskService } from '../src/modules/medical-control-plane/tool-orchestrator/services/framingham-risk.service';
 import { GraceAcsService } from '../src/modules/medical-control-plane/tool-orchestrator/services/grace-acs.service';
+import { CorrectedCalciumService } from '../src/modules/medical-control-plane/tool-orchestrator/services/corrected-calcium.service';
+import { CorrectedSodiumService } from '../src/modules/medical-control-plane/tool-orchestrator/services/corrected-sodium.service';
+import { FenaService } from '../src/modules/medical-control-plane/tool-orchestrator/services/fena.service';
+import { FeureaService } from '../src/modules/medical-control-plane/tool-orchestrator/services/feurea.service';
+import { OsmolalGapService } from '../src/modules/medical-control-plane/tool-orchestrator/services/osmolal-gap.service';
+import { SerumOsmolalityService } from '../src/modules/medical-control-plane/tool-orchestrator/services/serum-osmolality.service';
+import { Pao2Fio2RatioService } from '../src/modules/medical-control-plane/tool-orchestrator/services/pao2-fio2-ratio.service';
+import { RoxIndexService } from '../src/modules/medical-control-plane/tool-orchestrator/services/rox-index.service';
+import { MewsService } from '../src/modules/medical-control-plane/tool-orchestrator/services/mews.service';
+import { RevisedTraumaScoreService } from '../src/modules/medical-control-plane/tool-orchestrator/services/revised-trauma-score.service';
+import { HuntHessScaleService } from '../src/modules/medical-control-plane/tool-orchestrator/services/hunt-hess-scale.service';
+import { IchScoreService } from '../src/modules/medical-control-plane/tool-orchestrator/services/ich-score.service';
+import { FourScoreService } from '../src/modules/medical-control-plane/tool-orchestrator/services/four-score.service';
+import { ModifiedRankinScaleService } from '../src/modules/medical-control-plane/tool-orchestrator/services/modified-rankin-scale.service';
+import { PecarnHeadService } from '../src/modules/medical-control-plane/tool-orchestrator/services/pecarn-head.service';
+import { WellsDvtService } from '../src/modules/medical-control-plane/tool-orchestrator/services/wells-dvt.service';
+import { AbgInterpreterService } from '../src/modules/medical-control-plane/tool-orchestrator/services/abg-interpreter.service';
 import { AuditService } from '../src/modules/audit/audit.service';
 import { AIService } from '../src/modules/ai/ai.service';
 import { ToolMetricsService } from '../src/modules/metrics/tool-metrics.service';
@@ -86,6 +103,23 @@ describe('ToolOrchestratorService', () => {
         TimiUaNstemiService,
         FraminghamRiskService,
         GraceAcsService,
+        CorrectedCalciumService,
+        CorrectedSodiumService,
+        FenaService,
+        FeureaService,
+        OsmolalGapService,
+        SerumOsmolalityService,
+        Pao2Fio2RatioService,
+        RoxIndexService,
+        MewsService,
+        RevisedTraumaScoreService,
+        HuntHessScaleService,
+        IchScoreService,
+        FourScoreService,
+        ModifiedRankinScaleService,
+        PecarnHeadService,
+        WellsDvtService,
+        AbgInterpreterService,
         {
           provide: AuditService,
           useValue: mockAuditService,
@@ -121,10 +155,10 @@ describe('ToolOrchestratorService', () => {
   });
 
   describe('Tool Registry', () => {
-    it('should register all twenty-two tools on initialization', () => {
+    it('should register all thirty-nine tools on initialization', () => {
       const tools = service.listAvailableTools();
-      expect(tools.count).toBe(22);
-      expect(tools.tools.length).toBe(22);
+      expect(tools.count).toBe(39);
+      expect(tools.tools.length).toBe(39);
     });
 
     it('should have SOFA calculator in registry', () => {
@@ -337,6 +371,47 @@ describe('ToolOrchestratorService', () => {
 
       expect(result.success).toBe(true);
       expect(result.toolId).toBe('lab-interpreter');
+    });
+
+    it('should execute Wells DVT calculator with a hand-computed score', async () => {
+      const result = await service.executeTool({
+        toolId: 'wells-dvt-calculator',
+        parameters: {
+          activeCancer: false,
+          paralysisParesisImmobilization: false,
+          recentlyBedriddenOrSurgery: false,
+          localizedTenderness: true,
+          entireLegSwollen: true,
+          calfSwellingOver3cm: false,
+          pittingEdema: false,
+          collateralSuperficialVeins: false,
+          previousDvt: true,
+          alternativeDiagnosisAsLikely: false,
+        },
+        userId: 'test-user',
+        conversationId: 'test-conv',
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.toolId).toBe('wells-dvt-calculator');
+      expect(result.result.data.score).toBe(3);
+      expect(result.result.data.probabilityBand).toBe('DVT likely');
+    });
+
+    it('should execute ABG interpreter with a hand-computed compensated metabolic acidosis', async () => {
+      const result = await service.executeTool({
+        toolId: 'abg-interpreter',
+        parameters: { pH: 7.28, paco2: 30, hco3: 14, sodium: 138, chloride: 100 },
+        userId: 'test-user',
+        conversationId: 'test-conv',
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.toolId).toBe('abg-interpreter');
+      expect(result.result.data.primaryDisorder).toBe('metabolic_acidosis');
+      expect(result.result.data.compensation.assessment).toContain('appropriate');
+      expect(result.result.data.anionGap.anionGap).toBe(24);
+      expect(result.result.data.anionGap.category).toBe('high_anion_gap');
     });
 
     it('should include execution time', async () => {
@@ -556,7 +631,7 @@ describe('ToolOrchestratorService', () => {
     it('should return tool statistics', () => {
       const stats = service.getToolStatistics();
 
-      expect(stats.totalTools).toBe(22);
+      expect(stats.totalTools).toBe(39);
       expect(stats.toolsByCategory).toBeDefined();
       expect(stats.tools).toBeDefined();
     });
@@ -578,11 +653,50 @@ describe('ToolOrchestratorService', () => {
   });
 
   describe('Frontend registry contract parity', () => {
+    // `src/data/clinicalToolIdContract.ts`'s `REGISTRY_ID_TO_ORCHESTRATOR_TOOL` mirrors this
+    // map entry-for-entry (verified against each tool's real registerTool() wiring above).
     it('REGISTRY_ID_TO_EXECUTOR_TOOL_ID matches frontend REGISTRY_ID_TO_ORCHESTRATOR_TOOL', () => {
       expect(REGISTRY_ID_TO_EXECUTOR_TOOL_ID).toEqual({
         'drug-check': 'drug-interactions',
         'lab-interp': 'lab-interpreter',
         'sofa-score': 'sofa-calculator',
+        'heart-score': 'heart-score',
+        'wells-pe': 'wells-pe',
+        'gcs-calculator': 'gcs-calculator',
+        news2: 'news2',
+        'cha2ds2vasc-calculator': 'cha2ds2vasc-calculator',
+        'calc-chads2vasc': 'cha2ds2vasc-calculator',
+        'shock-index': 'shock-index',
+        'anion-gap': 'anion-gap',
+        'aa-gradient': 'aa-gradient',
+        'apache2-calculator': 'apache2-calculator',
+        abcd2: 'abcd2',
+        'canadian-c-spine': 'canadian-c-spine',
+        'nexus-cspine': 'nexus-cspine',
+        chads2: 'chads2',
+        'has-bled': 'has-bled',
+        'timi-ua-nstemi': 'timi-ua-nstemi',
+        'framingham-risk': 'framingham-risk',
+        'grace-acs': 'grace-acs',
+        'duke-treadmill-score': 'duke-treadmill-score',
+        'reynolds-risk-score': 'reynolds-risk-score',
+        'corrected-calcium': 'corrected-calcium',
+        'corrected-sodium': 'corrected-sodium',
+        fena: 'fena',
+        feurea: 'feurea',
+        'osmolal-gap': 'osmolal-gap',
+        'serum-osmolality': 'serum-osmolality',
+        'pao2-fio2-ratio': 'pao2-fio2-ratio',
+        'rox-index': 'rox-index',
+        mews: 'mews',
+        'revised-trauma-score': 'revised-trauma-score',
+        'hunt-hess-scale': 'hunt-hess-scale',
+        'ich-score': 'ich-score',
+        'four-score': 'four-score',
+        'modified-rankin-scale': 'modified-rankin-scale',
+        'pecarn-head': 'pecarn-head',
+        'wells-dvt-calculator': 'wells-dvt-calculator',
+        'abg-interpreter': 'abg-interpreter',
       });
     });
   });
@@ -614,7 +728,7 @@ describe('ToolOrchestratorService', () => {
     it('should provide user-friendly error messages', async () => {
       const result = await service.executeInChat('invalid-tool', {}, 'test-user', 'test-conv');
 
-      expect(result.formattedForChat).toContain('Error');
+      expect(result.formattedForChat).toContain('not executed');
     });
   });
 

@@ -67,10 +67,10 @@ export function WorkflowSituationBrief({
   return (
     <section
       className={[
+        /* One summary surface — cells inside are flat, not nested cards */
         'emergency-route-situation-brief',
         'cdl-situation-brief',
-        'cdl-zone',
-        'cdl-zone--operational-summary',
+        'cdl-surface-flat',
         `emergency-route-situation-brief--${tone}`,
         tone !== 'neutral' ? `cdl-situation-brief--${cdlTone}` : '',
         className,
@@ -78,8 +78,9 @@ export function WorkflowSituationBrief({
         .filter(Boolean)
         .join(' ')}
       aria-label="Workflow situation summary"
+      data-cdl-surface="summary"
     >
-      <ol className="emergency-route-situation-brief__list emergency-route-situation-brief__list--graphic">
+      <ol className="emergency-route-situation-brief__list emergency-route-situation-brief__list--graphic cdl-situation-grid">
         {items.map((item) => (
           <SituationGraphicCard
             key={item.id}
@@ -154,6 +155,11 @@ export function EmergencyRoutePage({
   analytics = undefined,
   history = undefined,
   operationalSummaryExtra = undefined,
+  // Accepted as an alias for `children` — two real pages (ClinicalAlertsPage,
+  // HospitalCommandCenter) pass their main content this way, matching the
+  // `activeWork` zone name below; without this, that content was silently
+  // dropped (this component's props are typed `any`, so nothing caught it).
+  activeWork = undefined,
 }: any = {}) {
   const surfaces = usePractitionerSurfaceVisibility();
   const operatingSurface = useEdOperatingSurface();
@@ -227,7 +233,7 @@ export function EmergencyRoutePage({
             </>
           ),
           primaryActions,
-          activeWork: children,
+          activeWork: activeWork ?? children,
           supportingContext,
           analytics,
           history,
@@ -235,6 +241,22 @@ export function EmergencyRoutePage({
       />
     </PageShell>
   );
+}
+
+/** Prefer semantic tone; never pass raw hex as color into metric tiles. */
+function resolveMetricTone(metric: {
+  tone?: string;
+  color?: string;
+}): string | undefined {
+  if (metric.tone) return metric.tone;
+  const c = String(metric.color || '').toUpperCase();
+  if (!c) return undefined;
+  if (c.includes('EF4444') || c.includes('DC2626') || c.includes('B91C1C')) return 'critical';
+  if (c.includes('F97316') || c.includes('EA580C') || c.includes('C2410C')) return 'urgent';
+  if (c.includes('F59E0B') || c.includes('D97706') || c.includes('B45309')) return 'warning';
+  if (c.includes('10B981') || c.includes('059669') || c.includes('15803D')) return 'success';
+  if (c.includes('0EA5E9') || c.includes('0284C7') || c.includes('075985')) return 'info';
+  return 'neutral';
 }
 
 export function MetricGrid({ metrics }) {
@@ -246,13 +268,14 @@ export function MetricGrid({ metrics }) {
   return (
     <div className="emergency-route-metric-grid emergency-route-metric-grid--graphic">
       {metrics.map((metric) => {
-        const accent = metric.tone ? metricColorForTone(metric.tone) : metric.color;
+        const tone = resolveMetricTone(metric);
+        const accent = tone ? metricColorForTone(tone) : undefined;
         return (
           <MetricGraphicCard
             key={metric.label}
             label={metric.label}
             value={metric.value}
-            tone={metric.tone}
+            tone={tone}
             color={accent}
             progress={metric.progress}
             iconKey={metric.iconKey}
@@ -266,7 +289,10 @@ export function MetricGrid({ metrics }) {
 export function PatientGrid({ patients, emptyMessage }) {
   if (!patients.length) {
     return (
-      <div role="status" className="emergency-route-card emergency-route-empty emergency-route-empty--graphic">
+      <div
+        role="status"
+        className="emergency-route-card emergency-route-empty emergency-route-empty--graphic cdl-surface cdl-elev-1"
+      >
         <CdlEmptyIllustration variant={resolveEmptyStateGraphic(emptyMessage)} />
         <span>{emptyMessage}</span>
       </div>
@@ -274,9 +300,16 @@ export function PatientGrid({ patients, emptyMessage }) {
   }
 
   return (
-    <div className="emergency-route-patient-grid">
+    <div
+      className="emergency-route-patient-grid cdl-patient-board"
+      data-cdl-surface="board"
+      role="list"
+      aria-label="Patient cards"
+    >
       {patients.map((patient) => (
-        <PatientCard key={patient.id} patient={patient} />
+        <div key={patient.id} className="cdl-patient-board__item" role="listitem">
+          <PatientCard patient={patient} />
+        </div>
       ))}
     </div>
   );

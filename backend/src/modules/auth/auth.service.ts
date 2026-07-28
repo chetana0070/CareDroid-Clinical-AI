@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   BadRequestException,
   ForbiddenException,
+  InternalServerErrorException,
   Optional,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -36,6 +37,7 @@ import { AuditAction } from '../audit/entities/audit-log.entity';
 import { TwoFactorService } from '../two-factor/two-factor.service';
 import { EmailService } from '../email/email.service';
 import { EncryptionService } from '../encryption/encryption.service';
+import { buildAccessTokenClaims } from './config/jwt-claims.util';
 
 @Injectable()
 export class AuthService {
@@ -356,6 +358,10 @@ export class AuthService {
       });
     }
 
+    if (!user) {
+      throw new InternalServerErrorException('Failed to bootstrap dev session user');
+    }
+
     user.lastLoginAt = new Date();
     user.lastLoginIp = ipAddress;
     await this.userRepository.save(user);
@@ -463,13 +469,15 @@ export class AuthService {
   }
 
   async generateTokens(user: User) {
-    const accessPayload = {
-      sub: user.id,
+    // Architect Mode Stage D: explicit permissions + emergencyRole claims.
+    // Guards/middleware must treat `permissions` as the authority list.
+    const accessPayload = buildAccessTokenClaims({
+      userId: user.id,
       email: user.email,
       role: user.role,
       roleProfileId: user.profile?.roleProfileId || null,
       tokenUse: 'access',
-    };
+    });
 
     const accessToken = this.jwtService.sign(accessPayload);
 
@@ -477,7 +485,7 @@ export class AuthService {
     const refreshToken = this.jwtService.sign(
       {
         ...accessPayload,
-        tokenUse: 'refresh',
+        tokenUse: 'refresh' as const,
       },
       {
         expiresIn: config.refreshTokenExpiry,
@@ -505,7 +513,7 @@ export class AuthService {
       throw new BadRequestException('Invalid verification token');
     }
 
-    if (new Date() > user.emailVerificationExpiry) {
+    if (!user.emailVerificationExpiry || new Date() > user.emailVerificationExpiry) {
       throw new BadRequestException('Verification token expired');
     }
 

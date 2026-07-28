@@ -85,6 +85,10 @@
   text-transform: uppercase;
 }
 
+.cd-ai-card__provenance-line {
+  margin: 0;
+}
+
 .cd-ai-card__provenance ul {
   margin: 0;
   padding-left: 1.1rem;
@@ -163,6 +167,14 @@
   color: var(--medical-status-critical-text, #b91c1c);
 }
 
+.cd-ai-panel__patient-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-weight: 700;
+}
+
 .cd-ai-panel__list {
   display: grid;
   gap: 12px;
@@ -185,7 +197,7 @@
 }
 
 .cd-ai-card__title svg {
-  color: var(--medical-text-link, #0369a1);
+  color: #374151;
   flex: 0 0 auto;
   margin-top: 2px;
 }
@@ -213,8 +225,8 @@
 }
 
 .cd-ai-confidence--medium {
-  background: color-mix(in srgb, #0ea5e9 14%, #ffffff);
-  color: var(--medical-text-link, #0369a1);
+  background: color-mix(in srgb, #64748b 14%, #ffffff);
+  color: #374151;
 }
 
 .cd-ai-confidence--low {
@@ -381,8 +393,12 @@
   color: var(--medical-status-critical-text, #b91c1c);
 }
 
+.cd-ai-actions__button--dismissed-toggle {
+  align-self: flex-start;
+}
+
 .cd-ai-actions__button:focus-visible {
-  outline: 2px solid var(--app-focus, #0284c7);
+  outline: 2px solid var(--app-focus, #475569);
   outline-offset: 2px;
 }
 

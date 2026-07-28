@@ -16,12 +16,12 @@ html {
   --color-text-muted: var(--medical-ink-subtle);
   --color-primary: var(--medical-accent);
   --color-secondary: var(--medical-accent-soft);
-  --color-accent: var(--medical-accent-hover, #0369a1);
-  --link-color: var(--app-link-fg, var(--medical-text-link));
+  --color-accent: var(--medical-accent-hover, #475569);
+  --link-color: var(--app-link-fg, #374151);
   --status-info: var(--medical-accent);
-  --primary-color: var(--app-accent-interactive);
-  --accent-color: var(--app-accent-interactive);
-  --accent-green: var(--app-accent-interactive);
+  --primary-color: #374151;
+  --accent-color: #374151;
+  --accent-green: #374151;
   --bg-base: var(--medical-surface-page);
   --bg-surface: var(--medical-surface-card);
   --bg-elevated: var(--medical-surface-card);
@@ -61,12 +61,32 @@ html {
   border-color: color-mix(in srgb, var(--medical-border) 88%, var(--medical-accent) 12%);
 }
 
+/* [class*='--primary'] is a deliberate sweep for BEM "--primary" button
+   modifiers (see role-accent-theme.css's comment on this rule) but, being a
+   plain substring match, it also caught .cdl-zone--primary-actions — a
+   layout zone, not a button — painting its entire section dark instead of
+   just its intended button children. Excluded the same way the file already
+   excludes .reception-desk-toolbar__action.
+   [class*='cta'] has the same substring-match risk: it also caught
+   .fj-critical-banner__cta, a critical-alert "Acknowledge" action whose own
+   CSS (FullJourneyOperatingPage.css) deliberately paints it red, not the
+   generic dark navy this sweep applies to ordinary CTAs — and
+   .profile-copilot-card__cta, a secondary/ghost button whose own CSS
+   (profile-surface-normalization.css) deliberately paints it with a light
+   muted surface + link-colored text, not a solid dark button either. Same
+   collision again with .reception-job-profile-card__cta and
+   .reception-skill-strip__cta (both solid brand-blue buttons, own CSS in
+   ReceptionJobProfileCard.css / ReceptionSkillStrip.css) — this sweep
+   overwrote their deliberate brand-blue background with #374151, which on
+   its own would still be readable, but combined with text-normalization.css's
+   __cta rule (see there) collapsed to ~1.02:1, worse than the two cases
+   above. */
 :is(.app-shell, .emergency-app-shell) :is(
     [class*='--primary'],
     .btn-primary,
     [class*='cta']
-  ) {
-  background: var(--app-accent-interactive, var(--medical-accent));
+  ):not(.reception-desk-toolbar__action):not(.cdl-zone--primary-actions):not(.fj-critical-banner__cta):not(.profile-copilot-card__cta):not(.reception-job-profile-card__cta):not(.reception-skill-strip__cta) {
+  background: #374151;
   border-color: color-mix(in srgb, var(--medical-accent) 55%, var(--medical-border));
   color: var(--app-on-solid, #ffffff);
 }

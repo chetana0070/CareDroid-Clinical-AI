@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { AlertTriangle, ChevronDown, ChevronUp, Save, Sparkles, Timer, UserPlus } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronUp, ClipboardCheck, Save, Sparkles, Timer, UserPlus } from 'lucide-react';
 import {
   detectReceptionRedFlags,
+  listReceptionRecommendedSafetyFields,
+  resolveReceptionRouteValidationMode,
   resolveUnifiedIntakePrimaryAction,
   runReceptionAiIntakeAssist,
   UNIFIED_INTAKE_PHASE,
@@ -12,6 +14,9 @@ import {
   type ReceptionRouteResult,
   type UnifiedIntakePhase,
 } from '../../services/receptionIntakeOrchestrator';
+import { RECEPTION_COPY } from './receptionCopy';
+import ReceptionDocumentCapture from './ReceptionDocumentCapture';
+import './UnifiedIntakePanel.css';
 
 const ARRIVAL_TYPES: Array<{ id: ReceptionArrivalType; label: string }> = [
   { id: 'walk-in', label: 'Walk-in' },
@@ -58,6 +63,14 @@ export type UnifiedIntakePanelProps = {
   showQueueRail?: boolean;
   queueRail?: ReactNode;
   alertsRail?: ReactNode;
+  /** Actor label for OCR audit trail. */
+  actorName?: string;
+  /** Optional patient id when completing ID for an existing provisional chart. */
+  patientId?: string;
+  /** Duplicate-match warnings from board search (non-blocking). */
+  duplicateWarnings?: string[];
+  /** Override assist panel title (e.g. "Desk assist" instead of AI). */
+  assistTitle?: string;
 };
 
 export default function UnifiedIntakePanel({
@@ -74,16 +87,48 @@ export default function UnifiedIntakePanel({
   showQueueRail = true,
   queueRail,
   alertsRail,
+  actorName = 'Reception',
+  patientId,
+  duplicateWarnings = [],
+  assistTitle,
 }: UnifiedIntakePanelProps) {
   const [phase, setPhase] = useState<UnifiedIntakePhase>(UNIFIED_INTAKE_PHASE.critical);
   const [adminExpanded, setAdminExpanded] = useState(false);
 
-  const missingCriticalFields = useMemo(() => validateReceptionMinimumCriticalData(draft), [draft]);
+  const routeMode = useMemo(
+    () => resolveReceptionRouteValidationMode(draft, { urgency: aiAssist?.urgencySuggestion }),
+    [aiAssist?.urgencySuggestion, draft],
+  );
+  const missingCriticalFields = useMemo(
+    () => validateReceptionMinimumCriticalData(draft, routeMode),
+    [draft, routeMode],
+  );
+  const recommendedSafety = useMemo(() => listReceptionRecommendedSafetyFields(draft), [draft]);
   const liveRedFlags = useMemo(() => detectReceptionRedFlags(draft), [draft]);
   const primaryAction = useMemo(
     () => resolveUnifiedIntakePrimaryAction(draft, aiAssist),
     [draft, aiAssist],
   );
+
+  const outstandingActions = useMemo(() => {
+    const items: string[] = [];
+    if (!String(draft.chiefComplaint || '').trim() && routeMode === 'standard') {
+      items.push('Capture chief complaint');
+    }
+    if (missingCriticalFields.length) {
+      items.push(
+        routeMode === 'standard'
+          ? `Complete required field${missingCriticalFields.length === 1 ? '' : 's'}: ${missingCriticalFields.join(', ')}`
+          : `Still needed for ${routeMode} route: ${missingCriticalFields.join(', ')}`,
+      );
+    } else if (routeMode !== 'standard' && recommendedSafety.length) {
+      items.push(`Optional before nurse (recommended): ${recommendedSafety.join(', ')}`);
+    }
+    if (liveRedFlags.length) {
+      items.push(`Confirm red flag${liveRedFlags.length === 1 ? '' : 's'}: ${liveRedFlags.join(', ')}`);
+    }
+    return items;
+  }, [draft.chiefComplaint, missingCriticalFields, liveRedFlags, recommendedSafety, routeMode]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -135,11 +180,43 @@ export default function UnifiedIntakePanel({
       {missingCriticalFields.length && phase === UNIFIED_INTAKE_PHASE.critical ? (
         <div className="reception-command-missing" role="status">
           <AlertTriangle size={18} aria-hidden="true" />
-          <span>Missing critical info: {missingCriticalFields.join(', ')}.</span>
+          <span>Missing for {routeMode} route: {missingCriticalFields.join(', ')}.</span>
+        </div>
+      ) : null}
+
+      {routeMode !== 'standard' && !missingCriticalFields.length ? (
+        <div className="reception-command-missing reception-command-missing--rapid" role="status">
+          <span>
+            Rapid route allowed ({routeMode}). Safety fields are recommended but will not block send
+            {recommendedSafety.length ? `: ${recommendedSafety.join(', ')}` : ''}.
+          </span>
+        </div>
+      ) : null}
+
+      {duplicateWarnings.length ? (
+        <div className="reception-command-missing reception-command-missing--duplicate" role="status">
+          <AlertTriangle size={18} aria-hidden="true" />
+          <span>
+            Possible existing record{duplicateWarnings.length === 1 ? '' : 's'}:{' '}
+            {duplicateWarnings.join(' · ')}. Confirm identity before creating a new patient.
+          </span>
         </div>
       ) : null}
 
       <div className="reception-command-grid unified-intake-grid">
+        <section className="reception-command-panel reception-command-panel--span" aria-labelledby="document-scan-title">
+          <div className="reception-command-panel__header">
+            <h2 id="document-scan-title">Identity document capture</h2>
+          </div>
+          <ReceptionDocumentCapture
+            draft={draft}
+            onDraftChange={(patch) => onDraftChange(patch)}
+            actorName={actorName}
+            patientId={patientId}
+            disabled={submitting || Boolean(result)}
+          />
+        </section>
+
         <section className="reception-command-panel reception-command-panel--span" aria-labelledby="arrival-type-title">
           <div className="reception-command-panel__header">
             <h2 id="arrival-type-title">Arrival type</h2>
@@ -149,6 +226,7 @@ export default function UnifiedIntakePanel({
               <button
                 key={type.id}
                 type="button"
+                // eslint-disable-next-line jsx-a11y/role-has-required-aria-props -- aria-checked is always set via the conditional spread below, the linter can't trace it statically
                 role="radio"
                 {...((draft.arrivalType === type.id) ? { 'aria-checked': 'true' as const } : { 'aria-checked': 'false' as const })}
                 className={draft.arrivalType === type.id ? 'is-active' : ''}
@@ -229,6 +307,40 @@ export default function UnifiedIntakePanel({
                 <option value="M">Male</option>
                 <option value="Intersex">Intersex</option>
                 <option value="Other">Other</option>
+              </select>
+            </label>
+            <label className="reception-command-field">
+              <span>Preferred language</span>
+              <input
+                value={draft.preferredLanguage || ''}
+                onChange={(event) => onDraftChange({ preferredLanguage: event.target.value })}
+                placeholder="English, Spanish, ASL…"
+                list="reception-language-suggestions-critical"
+                autoComplete="off"
+              />
+              <datalist id="reception-language-suggestions-critical">
+                <option value="English" />
+                <option value="Spanish" />
+                <option value="French" />
+                <option value="Mandarin" />
+                <option value="Arabic" />
+                <option value="ASL" />
+                <option value="Other" />
+              </datalist>
+            </label>
+            <label className="reception-command-field">
+              <span>Interpreter needed</span>
+              <select
+                value={draft.interpreterNeeded || 'unknown'}
+                onChange={(event) =>
+                  onDraftChange({
+                    interpreterNeeded: event.target.value as ReceptionIntakeDraft['interpreterNeeded'],
+                  })
+                }
+              >
+                <option value="unknown">Unknown</option>
+                <option value="yes">Yes — flag for care team</option>
+                <option value="no">No</option>
               </select>
             </label>
             <label className="reception-command-field">
@@ -339,6 +451,72 @@ export default function UnifiedIntakePanel({
                 Hide registration details
               </button>
               <div className="reception-command-form-grid reception-command-form-grid--admin">
+                <div className="reception-command-field reception-command-field--wide">
+                  <button
+                    type="button"
+                    className="reception-command-actionbar__secondary"
+                    onClick={() =>
+                      onDraftChange({
+                        insuranceStatus: 'deferred',
+                        consentStatus: 'deferred',
+                        documentStatus:
+                          draft.documentStatus === 'captured' ? draft.documentStatus : 'deferred',
+                      })
+                    }
+                  >
+                    Defer insurance & consent (do not block nurse)
+                  </button>
+                </div>
+                <label className="reception-command-field">
+                  <span>Preferred language</span>
+                  <input
+                    value={draft.preferredLanguage || ''}
+                    onChange={(event) => onDraftChange({ preferredLanguage: event.target.value })}
+                    placeholder="e.g. English, Spanish, ASL"
+                    list="reception-language-suggestions"
+                  />
+                  <datalist id="reception-language-suggestions">
+                    <option value="English" />
+                    <option value="Spanish" />
+                    <option value="French" />
+                    <option value="Mandarin" />
+                    <option value="Arabic" />
+                    <option value="ASL" />
+                    <option value="Other" />
+                  </datalist>
+                </label>
+                <label className="reception-command-field">
+                  <span>Interpreter needed</span>
+                  <select
+                    value={draft.interpreterNeeded || 'unknown'}
+                    onChange={(event) =>
+                      onDraftChange({
+                        interpreterNeeded: event.target.value as ReceptionIntakeDraft['interpreterNeeded'],
+                      })
+                    }
+                  >
+                    <option value="unknown">Unknown</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </label>
+                <label className="reception-command-field">
+                  <span>Next of kin / support person</span>
+                  <input
+                    value={draft.nextOfKinName || ''}
+                    onChange={(event) => onDraftChange({ nextOfKinName: event.target.value })}
+                    placeholder="Name"
+                  />
+                </label>
+                <label className="reception-command-field">
+                  <span>Next of kin phone</span>
+                  <input
+                    value={draft.nextOfKinPhone || ''}
+                    onChange={(event) => onDraftChange({ nextOfKinPhone: event.target.value })}
+                    placeholder="Callback number"
+                    inputMode="tel"
+                  />
+                </label>
                 <label className="reception-command-field">
                   <span>Allergies if known</span>
                   <select
@@ -432,6 +610,7 @@ export default function UnifiedIntakePanel({
                     onChange={(event) =>
                       onDraftChange({ documentStatus: event.target.value as ReceptionIntakeDraft['documentStatus'] })
                     }
+                    title="Use Check Identity for OCR scan of ID/health card; then create & route"
                   >
                     <option value="unknown">Unknown</option>
                     <option value="captured">Captured</option>
@@ -455,9 +634,26 @@ export default function UnifiedIntakePanel({
 
         <aside className="reception-command-panel reception-command-panel--assist" aria-labelledby="ai-assist-title">
           <div className="reception-command-panel__header">
-            <h2 id="ai-assist-title">AI Intake Assist</h2>
-            <span className="reception-command-chip">Auto-updated</span>
+            <h2 id="ai-assist-title">{assistTitle || RECEPTION_COPY.copilot?.title || 'Desk assist'}</h2>
+            <span className="reception-command-chip">{RECEPTION_COPY.copilot.autoUpdated}</span>
           </div>
+
+          <div className="reception-command-copilot-outstanding" role="status">
+            <div className="reception-command-copilot-outstanding__header">
+              <ClipboardCheck size={16} aria-hidden="true" />
+              <span>{RECEPTION_COPY.copilot.outstandingTitle}</span>
+            </div>
+            {outstandingActions.length ? (
+              <ul>
+                {outstandingActions.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>{RECEPTION_COPY.copilot.outstandingNone}</p>
+            )}
+          </div>
+
           {aiAssist ? (
             <div className="reception-command-ai">
               <div className={`reception-command-ai__urgency reception-command-ai__urgency--${aiAssist.urgencySuggestion}`}>
@@ -498,7 +694,7 @@ export default function UnifiedIntakePanel({
             <div className="reception-command-ai-empty">
               <div className="reception-command-empty">
                 <Sparkles size={20} aria-hidden="true" />
-                <span>Assist updates as you capture chief complaint and critical fields.</span>
+                <span>{RECEPTION_COPY.copilot.idle}</span>
               </div>
             </div>
           )}
@@ -509,29 +705,68 @@ export default function UnifiedIntakePanel({
       </div>
 
       <div className="reception-command-actionbar unified-intake-actionbar" aria-label="Unified intake actions">
-        <button type="button" className="reception-command-actionbar__secondary" onClick={onSaveDraft}>
+        <button
+          type="button"
+          className="reception-command-actionbar__secondary unified-intake-actionbar__secondary"
+          data-testid="reception-save-draft"
+          onClick={onSaveDraft}
+        >
           <Save size={17} aria-hidden="true" />
           Save draft
         </button>
         <button
           type="button"
+          className="reception-command-actionbar__secondary unified-intake-actionbar__secondary"
+          data-testid="reception-defer-admin"
+          title="Mark insurance and consent as deferred — does not block create & route"
+          disabled={submitting || Boolean(result)}
+          onClick={() => {
+            onDraftChange({
+              insuranceStatus: 'deferred',
+              consentStatus: 'deferred',
+              documentStatus:
+                draft.documentStatus === 'captured' ? draft.documentStatus : 'deferred',
+            });
+          }}
+        >
+          Defer admin
+        </button>
+        <button
+          type="button"
           className={
             primaryAction.tone === 'critical'
-              ? 'reception-command-actionbar__critical'
-              : 'reception-command-actionbar__primary'
+              ? 'reception-command-actionbar__critical unified-intake-actionbar__primary'
+              : 'reception-command-actionbar__primary unified-intake-actionbar__primary'
           }
+          data-testid="reception-create-route"
           disabled={submitting || !canCreatePatient}
-          onClick={() => void onRoute()}
+          title={
+            !canCreatePatient
+              ? 'Your profile cannot create patients. Switch to a registration-enabled role.'
+              : submitting
+                ? 'Creating patient and routing to triage…'
+                : primaryAction.label
+          }
+          aria-disabled={submitting || !canCreatePatient}
+          onClick={() => {
+            if (submitting || !canCreatePatient) return;
+            void onRoute();
+          }}
         >
           {primaryAction.startsThreeMinuteResponse ? (
             <Timer size={17} aria-hidden="true" />
           ) : (
             <UserPlus size={17} aria-hidden="true" />
           )}
-          {submitting ? 'Routing...' : primaryAction.label}
+          {submitting ? 'Creating & routing…' : primaryAction.label}
         </button>
         {result && onReset ? (
-          <button type="button" className="reception-command-actionbar__secondary" onClick={onReset}>
+          <button
+            type="button"
+            className="reception-command-actionbar__secondary unified-intake-actionbar__secondary"
+            data-testid="reception-next-patient"
+            onClick={onReset}
+          >
             Next patient
           </button>
         ) : null}

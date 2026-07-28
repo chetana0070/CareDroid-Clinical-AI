@@ -6,7 +6,7 @@ body {
   max-width: 100%;
   min-height: 100dvh;
   min-height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
     'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -118,7 +118,7 @@ body {
 
 :where(input, select, textarea):focus-visible,
 :where(button, [role='button'], a[href], summary, [tabindex]:not([tabindex='-1'])):focus-visible {
-  outline: 3px solid var(--app-focus-ring-aa, var(--app-accent-interactive));
+  outline: 3px solid var(--app-focus-ring-aa, #374151);
   outline-offset: 3px;
   border-color: var(--app-accent);
   box-shadow: 0 0 0 6px var(--app-focus);
@@ -261,8 +261,8 @@ body {
 }
 
 :where(.btn-danger, .btn-remove-med:hover, .lab-value-remove:hover) {
-  background: linear-gradient(135deg, var(--app-danger), color-mix(in srgb, var(--app-danger) 78%, #f0f9ff)) !important;
-  color: var(--app-danger-contrast) !important;
+  background: linear-gradient(135deg, var(--app-danger), color-mix(in srgb, var(--app-danger) 78%, #f1f5f9)) !important;
+  color: var(--app-on-solid) !important;
 }
 
 :where(.medication-input, .calc-input-field, .calc-select-field, .context-input, .context-select, .context-textarea, .lab-input-field, .simple-tool-search-input, .diagnosis-field) {

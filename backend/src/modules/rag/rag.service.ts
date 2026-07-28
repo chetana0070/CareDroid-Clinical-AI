@@ -18,6 +18,10 @@ import {
   findRegistryArtifactForSource,
   loadKnowledgeRegistryArtifacts,
 } from './utils/knowledge-registry-enrichment';
+import { RAG_GLOBAL_ORG_SCOPE } from './utils/tenant-scope';
+
+// Re-export canonical global tenant sentinel (single definition in tenant-scope).
+export { RAG_GLOBAL_ORG_SCOPE } from './utils/tenant-scope';
 
 /**
  * RAG Service
@@ -201,20 +205,21 @@ export class RAGService implements OnModuleInit {
       const embeddings = await this.embeddingService.embedDocuments(texts);
       this.logger.debug(`Generated ${embeddings.length} embeddings`);
 
-      // 3. Create vector records
+      // 3. Create vector records, tagging every chunk with its owning tenant
+      // (or the global sentinel for shared/public corpora) so retrieval can
+      // enforce tenant isolation at query time.
+      const organizationId = enrichedSource.organizationId || RAG_GLOBAL_ORG_SCOPE;
       const vectorRecords: VectorRecord[] = chunks.map((chunk, index) => ({
         id: `${enrichedSource.id}_chunk_${chunk.chunkIndex}`,
         vector: embeddings[index],
         text: chunk.text,
-        metadata: chunk.metadata,
+        metadata: { ...chunk.metadata, organizationId },
       }));
 
       // 4. Upsert to vector database
       await this.vectorDb.upsertBatch(vectorRecords);
       this.invalidateRetrievalCache();
-      this.logger.log(
-        `Successfully ingested ${chunks.length} chunks for: ${enrichedSource.title}`,
-      );
+      this.logger.log(`Successfully ingested ${chunks.length} chunks for: ${enrichedSource.title}`);
 
       return {
         success: true,
@@ -289,6 +294,25 @@ export class RAGService implements OnModuleInit {
     }
     if (options.jurisdiction) {
       filter.jurisdiction = options.jurisdiction;
+    }
+    // Normalize tenant id: empty/whitespace must not become a fake scope key.
+    // (Reinstated Cy76 — this fail-closed branch was lost in the Cy74-75
+    // consolidation rewrite; see rag.service.spec.ts adversarial cases.)
+    const rawOrganizationId = options.organizationId as unknown;
+    if (typeof rawOrganizationId === 'string') {
+      const organizationId = rawOrganizationId.trim();
+      if (organizationId) {
+        // Scope to the caller's own tenant plus the shared global corpus.
+        // Callers without tenant context (legacy/internal) get no
+        // organizationId filter at all, preserving unscoped retrieval.
+        filter.organizationId = [organizationId, RAG_GLOBAL_ORG_SCOPE];
+      }
+    } else if (rawOrganizationId !== undefined && rawOrganizationId !== null) {
+      // Malformed tenant context (array/object/number smuggled into a string
+      // field) fails CLOSED to the shared corpus only — never unscoped, and
+      // never forwarded where a vector backend could read it as a filter
+      // operator (e.g. { $ne: null }).
+      filter.organizationId = [RAG_GLOBAL_ORG_SCOPE];
     }
     return filter;
   }

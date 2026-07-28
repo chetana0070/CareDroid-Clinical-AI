@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Query,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { AnyPermission } from '../auth/decorators/permissions.decorator';
@@ -135,7 +126,11 @@ export class SentinelController {
   }
 
   @Get('units')
-  @AnyPermission(Permission.VIEW_SENTINEL_COMMAND, Permission.MANAGE_SENTINEL_UNITS, Permission.READ_PHI)
+  @AnyPermission(
+    Permission.VIEW_SENTINEL_COMMAND,
+    Permission.MANAGE_SENTINEL_UNITS,
+    Permission.READ_PHI,
+  )
   async listUnits() {
     return envelope(await this.tracking.listUnits(), 'Sentinel units');
   }
@@ -154,7 +149,11 @@ export class SentinelController {
   }
 
   @Post('ingest/cad')
-  @AnyPermission(Permission.INGEST_SENTINEL_CAD, Permission.MANAGE_INTEGRATIONS, Permission.MANAGE_SENTINEL_UNITS)
+  @AnyPermission(
+    Permission.INGEST_SENTINEL_CAD,
+    Permission.MANAGE_INTEGRATIONS,
+    Permission.MANAGE_SENTINEL_UNITS,
+  )
   @ApiOperation({ summary: 'Vendor-agnostic CAD/AVL webhook ingest' })
   async ingestCad(@Body() body: Record<string, unknown>) {
     const events = normalizeWebhookPayload(body || {});
@@ -162,9 +161,21 @@ export class SentinelController {
     const result = await this.tracking.ingestCadEvents(events);
 
     // If payload includes clinical fields, upsert inbound patient
-    const clinicalKeys = ['chiefComplaint', 'chief_complaint', 'eSituation.11', 'vitals', 'priority'];
+    const clinicalKeys = [
+      'chiefComplaint',
+      'chief_complaint',
+      'eSituation.11',
+      'vitals',
+      'priority',
+    ];
     const hasClinical = clinicalKeys.some((k) => body && body[k] != null);
-    let inbound = null;
+    let inbound: {
+      id: string;
+      missingFields: readonly string[];
+      validation: Awaited<
+        ReturnType<SentinelInboundService['upsertFromCadOrNemsis']>
+      >['validation'];
+    } | null = null;
     if (hasClinical || body?.patient) {
       const payload =
         body.patient && typeof body.patient === 'object'
@@ -202,7 +213,11 @@ export class SentinelController {
   }
 
   @Post('inbound')
-  @AnyPermission(Permission.MANAGE_SENTINEL_UNITS, Permission.WRITE_PHI, Permission.INGEST_SENTINEL_CAD)
+  @AnyPermission(
+    Permission.MANAGE_SENTINEL_UNITS,
+    Permission.WRITE_PHI,
+    Permission.INGEST_SENTINEL_CAD,
+  )
   async upsertInbound(@Body() body: Record<string, unknown>) {
     const result = await this.inbound.upsertFromCadOrNemsis({
       payload: body || {},
@@ -224,7 +239,11 @@ export class SentinelController {
   }
 
   @Post('inbound/:id/prep-recommendation')
-  @AnyPermission(Permission.REVIEW_SENTINEL_AI, Permission.USE_AI_CHAT, Permission.VIEW_SENTINEL_COMMAND)
+  @AnyPermission(
+    Permission.REVIEW_SENTINEL_AI,
+    Permission.USE_AI_CHAT,
+    Permission.VIEW_SENTINEL_COMMAND,
+  )
   async prepRecommendation(@Param('id') id: string, @Body() body: { preferAi?: boolean }) {
     const rec = await this.inbound.producePrepRecommendation(id, {
       preferAi: body?.preferAi !== false,
@@ -233,7 +252,11 @@ export class SentinelController {
   }
 
   @Get('alarms')
-  @AnyPermission(Permission.ACK_SENTINEL_ALARMS, Permission.VIEW_SENTINEL_COMMAND, Permission.READ_PHI)
+  @AnyPermission(
+    Permission.ACK_SENTINEL_ALARMS,
+    Permission.VIEW_SENTINEL_COMMAND,
+    Permission.READ_PHI,
+  )
   async listAlarms() {
     return envelope(await this.alarms.listOpen(), 'Open Sentinel alarms');
   }
@@ -263,7 +286,10 @@ export class SentinelController {
       title: body.title,
       message: body.message,
     });
-    return envelope(result, result.suppressed ? 'Alarm suppressed (dedupe/fatigue)' : 'Alarm raised');
+    return envelope(
+      result,
+      result.suppressed ? 'Alarm suppressed (dedupe/fatigue)' : 'Alarm raised',
+    );
   }
 
   @Post('alarms/:id/:action')
@@ -339,7 +365,11 @@ export class SentinelController {
   }
 
   @Get('analytics')
-  @AnyPermission(Permission.VIEW_SENTINEL_ANALYTICS, Permission.VIEW_ANALYTICS, Permission.VIEW_SENTINEL_COMMAND)
+  @AnyPermission(
+    Permission.VIEW_SENTINEL_ANALYTICS,
+    Permission.VIEW_ANALYTICS,
+    Permission.VIEW_SENTINEL_COMMAND,
+  )
   async analytics() {
     const [alarmPerf, inboundAnalytics, episodes, outboxHealth] = await Promise.all([
       this.alarms.performanceSnapshot(),
@@ -350,7 +380,9 @@ export class SentinelController {
 
     const completed = episodes.filter((e) => e.arrivedAt && e.dispatchedAt);
     const dispatchToArrival = completed
-      .map((e) => (Date.parse(e.arrivedAt as string) - Date.parse(e.dispatchedAt as string)) / 60000)
+      .map(
+        (e) => (Date.parse(e.arrivedAt as string) - Date.parse(e.dispatchedAt as string)) / 60000,
+      )
       .filter((n) => Number.isFinite(n) && n >= 0);
     const avgDispatchToArrival =
       dispatchToArrival.length === 0
@@ -359,9 +391,11 @@ export class SentinelController {
             (dispatchToArrival.reduce((a, b) => a + b, 0) / dispatchToArrival.length) * 10,
           ) / 10;
 
-    const withActual = episodes.filter((e) => e.actualTravelMin != null && e.predictedEtaMin != null);
-    const etaErrors = withActual.map(
-      (e) => Math.abs((e.actualTravelMin as number) - (e.predictedEtaMin as number)),
+    const withActual = episodes.filter(
+      (e) => e.actualTravelMin != null && e.predictedEtaMin != null,
+    );
+    const etaErrors = withActual.map((e) =>
+      Math.abs((e.actualTravelMin as number) - (e.predictedEtaMin as number)),
     );
     const avgEtaErrorMin =
       etaErrors.length === 0

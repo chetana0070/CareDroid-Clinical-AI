@@ -1568,5 +1568,5 @@ ul.calc-breakdown-list .calc-breakdown-item {
 }
 
 .pediatric-drug-reference-table__row--moderate {
-  border-left-color: var(--info, var(--status-info, #38bdf8));
+  border-left-color: var(--info, var(--status-info, #94a3b8));
 }

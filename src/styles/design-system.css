@@ -15,12 +15,18 @@
 /* 3. App palette (--app-*) */
 @import './theme-tokens.css';
 @import './emergency-tokens.css';
+@import './role-accent-theme.css';
+
+/* 3.5 Shell layout tokens (canonical source for all shell dimensions) */
+@import './shell-tokens.css';
 
 /* 4. Medical theme layers */
 @import './medical-color-layer.css';
 @import './medical-shell-layer.css';
 @import './medical-type-layer.css';
 @import './medical-card-layer.css';
+/* 4.5 Architect Medical Light contract (AI purple, focus, density, ultrawide) */
+@import './medical-light-theme.css';
 
 /* 5. Cross-namespace bridge (--cd-* ↔ --app-* ↔ --semantic-*) */
 @import './design-system-bridge.css';

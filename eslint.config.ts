@@ -1,10 +1,12 @@
 import js from '@eslint/js';
 import react from 'eslint-plugin-react';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import type { Linter } from 'eslint';
 
 const reactRecommended = react.configs.flat.recommended as Linter.Config;
+const jsxA11yRecommended = jsxA11y.flatConfigs.recommended as Linter.Config;
 
 const vitestAndLegacyJestGlobals = Object.fromEntries(
   ['describe', 'it', 'test', 'expect', 'vi', 'beforeEach', 'afterEach', 'beforeAll', 'afterAll', 'jest'].map(
@@ -13,6 +15,9 @@ const vitestAndLegacyJestGlobals = Object.fromEntries(
 );
 
 const config: Linter.Config[] = [
+  {
+    linterOptions: { reportUnusedDisableDirectives: 'error' },
+  },
   {
     ignores: [
       'dist/**',
@@ -54,17 +59,28 @@ const config: Linter.Config[] = [
     rules: {
       'no-undef': 'off',
       'no-unused-vars': 'off',
+      '@typescript-eslint/ban-ts-comment': [
+        'error',
+        {
+          'ts-ignore': true,
+          'ts-nocheck': true,
+          'ts-check': false,
+          'ts-expect-error': 'allow-with-description',
+          minimumDescriptionLength: 10,
+        },
+      ],
     },
   },
   {
     files: ['src/**/*.{js,jsx,ts,tsx}'],
-    plugins: reactRecommended.plugins,
+    plugins: { ...reactRecommended.plugins, ...jsxA11yRecommended.plugins },
     languageOptions: {
       ...(reactRecommended.languageOptions ?? {}),
       globals: { ...globals.browser, ...globals.node },
     },
     rules: {
       ...(reactRecommended.rules ?? {}),
+      ...(jsxA11yRecommended.rules ?? {}),
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
       'react/no-unescaped-entities': 'off',

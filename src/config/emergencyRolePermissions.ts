@@ -152,6 +152,10 @@ const ROUTES = Object.freeze({
   audit: CANONICAL_ROUTES.audit,
   aiCommandCenter: CANONICAL_ROUTES.aiCommandCenter,
   adminOperations: CANONICAL_ROUTES.adminOperations,
+  triage: CANONICAL_ROUTES.triage,
+  hospitalMap: CANONICAL_ROUTES.hospitalMap,
+  predictiveAnalytics: CANONICAL_ROUTES.predictiveAnalytics,
+  executive: CANONICAL_ROUTES.executive,
 });
 
 const ALL_ROUTES = Object.freeze([
@@ -194,6 +198,10 @@ const ALL_ROUTES = Object.freeze([
   ROUTES.audit,
   ROUTES.aiCommandCenter,
   ROUTES.adminOperations,
+  ROUTES.triage,
+  ROUTES.hospitalMap,
+  ROUTES.predictiveAnalytics,
+  ROUTES.executive,
 ]);
 const FUTURE_MODULE_ACTIONS = Object.freeze([
   EMERGENCY_ACTIONS.manageFederatedLearning,
@@ -264,6 +272,10 @@ const OPERATIONS_VIEW_ROUTES = Object.freeze([
   ROUTES.audit,
   ROUTES.aiCommandCenter,
   ROUTES.adminOperations,
+  ROUTES.triage,
+  ROUTES.hospitalMap,
+  ROUTES.predictiveAnalytics,
+  ROUTES.executive,
 ]);
 
 export const EMERGENCY_ROLE_DEFINITIONS = Object.freeze({
@@ -289,6 +301,8 @@ export const EMERGENCY_ROLE_DEFINITIONS = Object.freeze({
       ROUTES.integrationHub,
       ROUTES.audit,
       ROUTES.adminOperations,
+      // Team coordination only (IT Operations channel) — not clinical PHI surfaces
+      ROUTES.collaboration,
       ROUTES.help,
     ],
     actions: [EMERGENCY_ACTIONS.manageSettings],
@@ -363,6 +377,7 @@ export const EMERGENCY_ROLE_DEFINITIONS = Object.freeze({
       ROUTES.platform,
       ROUTES.alerts,
       ROUTES.help,
+      ROUTES.triage,
     ],
     actions: [
       EMERGENCY_ACTIONS.createPatient,
@@ -470,7 +485,8 @@ export const EMERGENCY_ROLE_DEFINITIONS = Object.freeze({
     id: EMERGENCY_ROLE_IDS.publicDisplay,
     label: EMERGENCY_ROLE_LABELS[EMERGENCY_ROLE_IDS.publicDisplay],
     description: 'Public waiting-room display — aggregate status only, no staff actions.',
-    routes: [ROUTES.whiteboard, ROUTES.analytics, ROUTES.collaboration, ROUTES.help],
+    // No Collaboration Hub — this is patient-facing, not an ED staff profile
+    routes: [ROUTES.whiteboard, ROUTES.analytics, ROUTES.help],
     actions: [EMERGENCY_ACTIONS.displayPublicWaitboard, EMERGENCY_ACTIONS.displayPublicPublish],
     defaultRoute: getDefaultRouteForProfile(EMERGENCY_ROLE_IDS.publicDisplay),
     readOnly: true,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import useProfileNavigate from '../../hooks/useProfileNavigate';
 import { useConversation } from '../../contexts/ConversationContext';
@@ -62,116 +62,96 @@ import {
 import { NavIcon } from '../../navigation/NavIcon';
 import { getCalculatorSubIcon, CHROME_ICONS } from '../../navigation/iconRegistry';
 import { useNotificationActions } from '../../hooks/useNotificationActions';
-import { Phq9Calculator, Gad7Calculator } from './mentalHealthCalculators';
-import {
-  AscvdRiskCalculator,
-  AuditCCalculator,
-  CkdStagingCalculator,
-  StopBangCalculator,
-} from './pr4aCalculators';
-import {
-  HeartScoreCalculator,
-  CentorMcisaacCalculator,
-  BishopScoreCalculator,
-  ApgarScoreCalculator,
-  BradenScaleCalculator,
-  MorseFallScaleCalculator,
-  RansonCriteriaCalculator,
-  BisapScoreCalculator,
-  Fib4Calculator,
-  FraminghamRiskCalculator,
-} from './pr8ClinicalBatchCalculators';
-import {
-  ApriCalculator,
-  GlasgowBlatchfordScoreCalculator,
-  MaddreyDiscriminantFunctionCalculator,
-  RockallScoreCalculator,
-} from './hepatologyGiCalculators';
-import { Abcd2Calculator } from './abcd2Calculator';
-import { AnionGapCalculator, RassCalculator, ShockIndexCalculator } from './nextWaveCalculators';
-import {
-  CanadianCSpineCalculator,
-  GraceAcsCalculator,
-  NihssCalculator,
-  OttawaAnkleCalculator,
-  PercCalculator,
-  WellsPeCalculator,
-} from './sourceBackedClinicalCalculators';
-import {
-  ApacheIICalculator,
-  Curb65Calculator,
-  GcsCalculator,
-  MewsCalculator,
-  PewsCalculator,
-  RevisedTraumaScoreCalculator,
-} from './emergencyCriticalCareCalculators';
-import {
-  Chads2Calculator,
-  DukeTreadmillScoreCalculator,
-  HcmSuddenDeathRiskCalculator,
-  HeartFailureStagingCalculator,
-  ReynoldsRiskScoreCalculator,
-} from './cardiologyCalculators';
+// Specialty families: lazy-loaded so the calculators route does not execute every specialty chunk up front.
 import {
   AaGradientCalculator,
+  Abcd2Calculator,
+  AdjustedBodyWeightCalculator,
+  AnionGapCalculator,
+  ApacheIICalculator,
+  ApgarScoreCalculator,
+  ApriCalculator,
+  AscvdRiskCalculator,
   AsthmaSeverityScoreCalculator,
+  AuditCCalculator,
+  BedOccupancyCalculator,
+  BishopScoreCalculator,
+  BisapScoreCalculator,
   BodeIndexCalculator,
-  CopdGoldAssessmentCalculator,
-  Pao2Fio2RatioCalculator,
-  PneumoniaSeverityIndexCalculator,
-  RoxIndexCalculator,
-} from './pulmonologyCalculators';
-import {
+  BradenScaleCalculator,
+  BsaCalculator,
   BunCreatinineRatioCalculator,
+  CageCalculator,
+  CanadianCSpineCalculator,
+  CentorMcisaacCalculator,
+  Chads2Calculator,
+  CkdStagingCalculator,
+  ColumbiaSuicideSeverityWorkflow,
+  CopdGoldAssessmentCalculator,
+  CorrectedCalciumCalculator,
   CorrectedSodiumCalculator,
   CreatinineClearanceCgCalculator,
+  Curb65Calculator,
+  DukeTreadmillScoreCalculator,
   EgfrCkdEpiCalculator,
+  EpworthSleepinessScaleCalculator,
   FeNaCalculator,
   FeUreaCalculator,
-  FreeWaterDeficitCalculator,
-  KfreCalculator,
-  OsmolalGapCalculator,
-} from './nephrologyCalculators';
-import {
-  AdjustedBodyWeightCalculator,
-  BsaCalculator,
-  CorrectedCalciumCalculator,
-  HomaIrCalculator,
-  IdealBodyWeightCalculator,
-  SerumOsmolalityCalculator,
-  WaistHipRatioCalculator,
-} from './endocrineMetabolicCalculators';
-import {
+  FentonGrowthChartHelper,
+  Fib4Calculator,
   FourScoreCalculator,
+  FraminghamRiskCalculator,
+  FreeWaterDeficitCalculator,
+  Gad7Calculator,
+  GcsCalculator,
+  GestationalAgeCalculator,
+  GlasgowBlatchfordScoreCalculator,
+  GraceAcsCalculator,
+  HcmSuddenDeathRiskCalculator,
+  HeartFailureStagingCalculator,
+  HeartScoreCalculator,
+  HomaIrCalculator,
   HuntHessScaleCalculator,
   IchScoreCalculator,
-  ModifiedRankinScaleCalculator,
-  NihssSummaryViewCalculator,
-  PediatricGcsCalculator,
-} from './neurologyCalculators';
-import {
-  FentonGrowthChartHelper,
-  GestationalAgeCalculator,
-  NeonatalBilirubinRiskHelper,
-  PediatricBpPercentileCalculator,
-  PediatricDoseSafetyChecker,
-  PregnancyDueDateCalculator,
-} from './pediatricsObgynCalculators';
-import {
-  CageCalculator,
-  ColumbiaSuicideSeverityWorkflow,
-  EpworthSleepinessScaleCalculator,
+  IdealBodyWeightCalculator,
+  KfreCalculator,
+  MaddreyDiscriminantFunctionCalculator,
   MdqCalculator,
+  MewsCalculator,
   MmseCalculator,
   MocaPlaceholderWorkflow,
+  ModifiedRankinScaleCalculator,
+  MorseFallScaleCalculator,
+  NeonatalBilirubinRiskHelper,
+  NihssCalculator,
+  NihssSummaryViewCalculator,
+  OsmolalGapCalculator,
+  OttawaAnkleCalculator,
+  Pao2Fio2RatioCalculator,
   Pcl5Calculator,
-} from './psychiatryScreeningCalculators';
-import {
-  BedOccupancyCalculator,
+  PediatricBpPercentileCalculator,
+  PediatricDoseSafetyChecker,
+  PediatricGcsCalculator,
+  PercCalculator,
+  PewsCalculator,
+  Phq9Calculator,
+  PneumoniaSeverityIndexCalculator,
+  PregnancyDueDateCalculator,
+  RansonCriteriaCalculator,
+  RassCalculator,
   ResourceUtilizationIndexCalculator,
+  RevisedTraumaScoreCalculator,
+  ReynoldsRiskScoreCalculator,
+  RockallScoreCalculator,
+  RoxIndexCalculator,
+  SerumOsmolalityCalculator,
+  ShockIndexCalculator,
   StaffingRatioCalculator,
+  StopBangCalculator,
   TurnaroundTimeCalculator,
-} from './hospitalOperationsCalculators';
+  WaistHipRatioCalculator,
+  WellsPeCalculator,
+} from './lazySpecialtyCalculators';
 import ToolNotFound from './ToolNotFound';
 import { ClinicalExecutorFeedback } from '../../components/clinical/ClinicalExecutorFeedback';
 import ToolPreflightStatus from '../../components/clinical/ToolPreflightStatus';
@@ -297,7 +277,16 @@ const Calculators = ({ embedded = false, onCloseEmbedded, initialCalculatorId = 
     category: 'Calculator',
   };
 
-  const [selectedCalculator, setSelectedCalculator] = useState<any>(null);
+  // Lazy-initialize from the incoming slug so a known calculator renders on the
+  // first paint instead of placeholder -> effect -> full re-render. CALCULATORS
+  // is a stable module-level array, so this returns the same object reference
+  // the sync effect below would also find, making its setSelectedCalculator(match)
+  // call a same-reference no-op on mount rather than a second full render.
+  const [selectedCalculator, setSelectedCalculator] = useState<any>(() => {
+    const slug = initialCalculatorId || calcFromUrl;
+    if (!slug) return null;
+    return CALCULATORS.find((c) => c.id === slug) || null;
+  });
   const [sharedResult, setSharedResult] = useState<any>(null);
   const [unknownSlug, setUnknownSlug] = useState<any>(null);
 
@@ -493,7 +482,20 @@ const Calculators = ({ embedded = false, onCloseEmbedded, initialCalculatorId = 
 /**
  * Calculator Interface Component
  */
+function CalculatorFamilyFallback() {
+  return (
+    <div className="calculators-select-placeholder" role="status" aria-live="polite">
+      <p>Loading calculator…</p>
+    </div>
+  );
+}
+
+/**
+ * Calculator Interface Component
+ * Specialty family modules load on demand (Suspense); core hub calculators stay eager.
+ */
 export const CalculatorInterface = ({ calculator, onResultChange, patientContext = null }) => {
+  const body = (() => {
   switch (calculator.id) {
     case 'sofa':
       return <SOFACalculator onResultChange={onResultChange} />;
@@ -700,6 +702,9 @@ export const CalculatorInterface = ({ calculator, onResultChange, patientContext
         />
       );
   }
+  })();
+
+  return <Suspense fallback={<CalculatorFamilyFallback />}>{body}</Suspense>;
 };
 
 /**
@@ -2656,11 +2661,12 @@ const SOFACalculator = ({ onResultChange }) => {
 
         {/* Respiration */}
         <div className="calc-input-group">
-          <label className="calc-input-label">
+          <label className="calc-input-label" htmlFor="sofa-pao2">
             PaO2 (mmHg)
             <span className="calc-input-help">Arterial oxygen pressure</span>
           </label>
           <input
+            id="sofa-pao2"
             type="number"
             className="calc-input-field"
             placeholder="80-100"
@@ -2670,11 +2676,12 @@ const SOFACalculator = ({ onResultChange }) => {
         </div>
 
         <div className="calc-input-group">
-          <label className="calc-input-label">
+          <label className="calc-input-label" htmlFor="sofa-fio2">
             FiO2 (0.21-1.0)
             <span className="calc-input-help">Fraction of inspired oxygen</span>
           </label>
           <input
+            id="sofa-fio2"
             type="number"
             step="0.01"
             className="calc-input-field"
@@ -2701,11 +2708,12 @@ const SOFACalculator = ({ onResultChange }) => {
 
         {/* Coagulation */}
         <div className="calc-input-group">
-          <label className="calc-input-label">
+          <label className="calc-input-label" htmlFor="sofa-platelets">
             Platelets (×10³/µL)
             <span className="calc-input-help">Normal: 150-400</span>
           </label>
           <input
+            id="sofa-platelets"
             type="number"
             className="calc-input-field"
             placeholder="150"
@@ -2716,11 +2724,12 @@ const SOFACalculator = ({ onResultChange }) => {
 
         {/* Liver */}
         <div className="calc-input-group">
-          <label className="calc-input-label">
+          <label className="calc-input-label" htmlFor="sofa-bilirubin">
             Bilirubin (mg/dL)
             <span className="calc-input-help">Normal: 0.1-1.2</span>
           </label>
           <input
+            id="sofa-bilirubin"
             type="number"
             step="0.1"
             className="calc-input-field"
@@ -2732,11 +2741,12 @@ const SOFACalculator = ({ onResultChange }) => {
 
         {/* Cardiovascular */}
         <div className="calc-input-group">
-          <label className="calc-input-label">
+          <label className="calc-input-label" htmlFor="sofa-map">
             MAP (mmHg)
             <span className="calc-input-help">Mean arterial pressure</span>
           </label>
           <input
+            id="sofa-map"
             type="number"
             className="calc-input-field"
             placeholder="70"
@@ -2746,15 +2756,17 @@ const SOFACalculator = ({ onResultChange }) => {
         </div>
 
         <div className="calc-input-group">
-          <label className="calc-input-label">
+          <span className="calc-input-label" id="sofa-vasopressor-label">
             Vasopressor Doses (µg/kg/min)
             <span className="calc-input-help">If applicable</span>
-          </label>
+          </span>
           <input
             type="number"
             step="0.01"
             className="calc-input-field calc-input-field--spaced"
             placeholder="Dopamine"
+            aria-label="Dopamine dose (µg/kg/min)"
+            aria-describedby="sofa-vasopressor-label"
             value={inputs.dopamine}
             onChange={(e) => setInputs({ ...inputs, dopamine: e.target.value })}
           />
@@ -2763,6 +2775,8 @@ const SOFACalculator = ({ onResultChange }) => {
             step="0.01"
             className="calc-input-field calc-input-field--spaced"
             placeholder="Norepinephrine"
+            aria-label="Norepinephrine dose (µg/kg/min)"
+            aria-describedby="sofa-vasopressor-label"
             value={inputs.norepinephrine}
             onChange={(e) => setInputs({ ...inputs, norepinephrine: e.target.value })}
           />
@@ -2771,6 +2785,8 @@ const SOFACalculator = ({ onResultChange }) => {
             step="0.01"
             className="calc-input-field"
             placeholder="Epinephrine"
+            aria-label="Epinephrine dose (µg/kg/min)"
+            aria-describedby="sofa-vasopressor-label"
             value={inputs.epinephrine}
             onChange={(e) => setInputs({ ...inputs, epinephrine: e.target.value })}
           />
@@ -2778,11 +2794,12 @@ const SOFACalculator = ({ onResultChange }) => {
 
         {/* CNS */}
         <div className="calc-input-group">
-          <label className="calc-input-label">
+          <label className="calc-input-label" htmlFor="sofa-gcs">
             Glasgow Coma Scale (3-15)
             <span className="calc-input-help">Consciousness level</span>
           </label>
           <input
+            id="sofa-gcs"
             type="number"
             className="calc-input-field"
             placeholder="15"
@@ -2795,11 +2812,12 @@ const SOFACalculator = ({ onResultChange }) => {
 
         {/* Renal */}
         <div className="calc-input-group">
-          <label className="calc-input-label">
+          <label className="calc-input-label" htmlFor="sofa-creatinine">
             Creatinine (mg/dL)
             <span className="calc-input-help">Normal: 0.6-1.3</span>
           </label>
           <input
+            id="sofa-creatinine"
             type="number"
             step="0.1"
             className="calc-input-field"
@@ -2810,11 +2828,12 @@ const SOFACalculator = ({ onResultChange }) => {
         </div>
 
         <div className="calc-input-group">
-          <label className="calc-input-label">
+          <label className="calc-input-label" htmlFor="sofa-urine-output">
             Urine Output (mL/day)
             <span className="calc-input-help">24-hour total</span>
           </label>
           <input
+            id="sofa-urine-output"
             type="number"
             className="calc-input-field"
             placeholder="1500"
@@ -2988,8 +3007,9 @@ const GFRCalculator = ({ onResultChange }) => {
         <CalcPanelTitle icon={CHROME_ICONS.activity}>Patient Information</CalcPanelTitle>
 
         <div className="calc-input-group">
-          <label className="calc-input-label">Age (years)</label>
+          <label className="calc-input-label" htmlFor="gfr-age">Age (years)</label>
           <input
+            id="gfr-age"
             type="number"
             className="calc-input-field"
             value={inputs.age}
@@ -2998,8 +3018,9 @@ const GFRCalculator = ({ onResultChange }) => {
         </div>
 
         <div className="calc-input-group">
-          <label className="calc-input-label">Sex</label>
+          <label className="calc-input-label" htmlFor="gfr-sex">Sex</label>
           <select
+            id="gfr-sex"
             className="calc-select-field"
             value={inputs.sex}
             onChange={(e) => setInputs({ ...inputs, sex: e.target.value })}
@@ -3011,11 +3032,12 @@ const GFRCalculator = ({ onResultChange }) => {
         </div>
 
         <div className="calc-input-group">
-          <label className="calc-input-label">
+          <label className="calc-input-label" htmlFor="gfr-creatinine">
             Serum Creatinine (mg/dL)
             <span className="calc-input-help">Normal: 0.6-1.3</span>
           </label>
           <input
+            id="gfr-creatinine"
             type="number"
             step="0.1"
             className="calc-input-field"
@@ -3161,8 +3183,9 @@ const BMICalculator = ({ onResultChange }) => {
         <CalcPanelTitle icon={CHROME_ICONS.scale}>Body Measurements</CalcPanelTitle>
 
         <div className="calc-input-group">
-          <label className="calc-input-label">Unit System</label>
+          <label className="calc-input-label" htmlFor="bmi-unit">Unit System</label>
           <select
+            id="bmi-unit"
             className="calc-select-field"
             value={inputs.unit}
             onChange={(e) => setInputs({ ...inputs, unit: e.target.value })}
@@ -3355,8 +3378,9 @@ const CHA2DS2VAScCalculator = ({ onResultChange }) => {
         </div>
 
         <div className="calc-input-group">
-          <label className="calc-input-label">Age (years)</label>
+          <label className="calc-input-label" htmlFor="cha2ds2vasc-age">Age (years)</label>
           <input
+            id="cha2ds2vasc-age"
             type="number"
             className="calc-input-field"
             placeholder="65+ = 1 pt, 75+ = 2 pts"
@@ -3411,8 +3435,9 @@ const CHA2DS2VAScCalculator = ({ onResultChange }) => {
         </div>
 
         <div className="calc-input-group">
-          <label className="calc-input-label">Sex</label>
+          <label className="calc-input-label" htmlFor="cha2ds2vasc-sex">Sex</label>
           <select
+            id="cha2ds2vasc-sex"
             className="calc-select-field"
             value={inputs.sex}
             onChange={(e) => setInputs({ ...inputs, sex: e.target.value })}

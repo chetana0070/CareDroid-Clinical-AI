@@ -7,9 +7,31 @@
   height: var(--app-viewport-height, 100dvh);
   max-height: var(--app-viewport-height, 100dvh);
   overflow: hidden;
-  background: var(--cdl-canvas-bg, var(--ed-surface-base, var(--medical-surface-page)));
-  color: var(--ed-text-primary, var(--medical-ink));
+  /* Medical Light: neutral clinical canvas */
+  background: var(--ml-surface-page, var(--app-surface-0, #f6f9fc));
+  color: var(--ml-text-primary, var(--ed-text-primary, var(--medical-ink)));
   font-family: var(--app-font-family-body, Inter, system-ui, sans-serif);
+}
+
+/* Reception desk density — less chrome stacking, more workspace */
+.emergency-app-shell--reception-density .emergency-app-shell__command-bars {
+  max-height: none;
+}
+
+.emergency-app-shell--reception-density .app-shell-main-content {
+  padding-block-start: var(--ml-space-2, 8px);
+}
+
+/* Ultrawide: keep clinical forms readable, use horizontal space for rails */
+@media (min-width: 1920px) {
+  .emergency-app-shell.ml-app-shell .app-shell-main-content {
+    padding-inline: var(--ml-content-inline-pad, var(--ml-space-6, 24px));
+  }
+
+  .emergency-app-shell.ml-app-shell .app-shell-main-content > * {
+    max-width: min(100%, 100rem);
+    margin-inline: auto;
+  }
 }
 
 @media (max-width: 1024px) and (min-width: 769px) {
@@ -28,9 +50,9 @@
   position: fixed;
   inset-block-start: var(--space-2, 8px);
   inset-inline-start: var(--space-2, 8px);
-  z-index: var(--z-toast, 1200);
+  z-index: var(--z-toast, 900);
   padding: var(--space-2, 8px) var(--space-3, 12px);
-  border: 1px solid var(--app-accent-interactive, var(--status-info, #0ea5e9));
+  border: 1px solid var(--app-text-secondary, #374151);
   border-radius: var(--radius-md, 8px);
   background: var(--color-elevated, var(--app-surface-1, #ffffff));
   color: var(--color-text-primary, var(--medical-ink, #111827));
@@ -44,7 +66,7 @@
 .ed-skip-link:focus,
 .ed-skip-link:focus-visible {
   transform: translateY(0);
-  outline: 2px solid var(--app-accent-interactive, var(--status-info, #0ea5e9));
+  outline: 2px solid var(--app-text-secondary, #374151);
   outline-offset: 2px;
 }
 
@@ -97,7 +119,7 @@
   box-shadow: 0 1px 0 color-mix(in srgb, var(--medical-border, #e2e8f0) 55%, transparent);
   overflow: visible;
   position: relative;
-  z-index: 30;
+  z-index: var(--z-header, 200);
 }
 
 .app-chrome .app-chrome-top {
@@ -111,7 +133,7 @@
   border: 0;
   border-bottom: 0;
   box-shadow: none;
-  background: color-mix(in srgb, var(--medical-slate-50, #f8fafc) 55%, #ffffff);
+  background: var(--app-surface-1, #ffffff);
 }
 
 /* Keep chrome from eating the scrollport (alarms float outside this chain) */
@@ -139,7 +161,7 @@
 }
 
 .emergency-app-shell .app-shell-main-content {
-  background: var(--cdl-canvas-bg, var(--medical-surface-page));
+  background: var(--app-surface-0, #ffffff);
 }
 
 .emergency-app-shell--copilot-open .emergency-app-shell__main-column {
@@ -150,6 +172,33 @@
 
 .emergency-app-shell--copilot-open .ed-copilot-panel {
   flex-shrink: 0;
+}
+
+/* Rendered eagerly by AppShell itself (not the lazy-loaded CopilotPanel
+   module) whenever the panel is closed, so its styling has to live in a
+   stylesheet AppShell imports directly — moved here from
+   CopilotPanel-part-02.css, which only loads once a user has opened
+   Copilot at least once and left the unstyled button broken until then. */
+.ed-copilot-launch {
+  position: fixed;
+  right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  border: 1px solid color-mix(in srgb, #374151 40%, transparent);
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--color-surface, var(--app-surface-1, #ffffff)) 92%, #f1f5f9);
+  color: var(--color-text-primary, var(--medical-ink, #111827));
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(2, 6, 23, 0.35);
+}
+
+.ed-copilot-launch:hover,
+.ed-copilot-launch:focus-visible {
+  border-color: color-mix(in srgb, #374151 70%, transparent);
+  transform: translateY(-1px);
 }
 
 .emergency-wall-kiosk-header {
@@ -212,7 +261,7 @@
   height: 16px;
   min-width: 16px;
   border: 2px solid var(--color-border-subtle, #e0f2fe);
-  border-top-color: var(--app-accent-interactive, #0ea5e9);
+  border-top-color: #374151;
   border-radius: 50%;
   animation: app-shell-loading-spin 0.7s linear infinite;
   flex-shrink: 0;

@@ -1,5 +1,4 @@
 import './CopilotPanel.css';
-import { MEDICAL_THEME } from '../config/medicalTheme.constants';
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -11,6 +10,7 @@ import useAiChiefOrchestrator from '../hooks/useAiChiefOrchestrator';
 import useUnifiedApplicationKnowledgeGraph from '../hooks/useUnifiedApplicationKnowledgeGraph';
 import type { CareDroidCentralNodeSnapshot } from '../central-node/careDroidCentralNode';
 import { invokeUnifiedAiConversational } from '../services/careDroidUnifiedAiNode';
+import { resolveUnifiedChannelFromRole } from '../services/unifiedAiEnvelope';
 import { getAIPrompt } from '../lib/ai/promptRegistry';
 import { HUMAN_REVIEW_DISCLAIMER } from '../lib/ai/safety/policy';
 import {
@@ -21,7 +21,6 @@ import { EMERGENCY_OS_BRANDING } from '../config/emergencyOsBranding.config';
 import { resolveCopilotChromeLabels } from '../config/profileDesignLanguage.config';
 import { EMPTY_STATE_COPY } from '../config/emptyStateCopy';
 import OperationalEmptyState, { OperationalEmptyAction } from './ui/OperationalEmptyState';
-import './CopilotPanel.css';
 import type { OperationalIntelligenceSnapshot } from '../operational-intelligence/operationalIntelligence.types';
 import { formatLongWaitAttentionForCopilot } from '../utils/longWaitRescue';
 import { formatCopilotRecommendationsForPrompt } from '../config/copilotRecommendationModel';
@@ -56,6 +55,12 @@ import {
 import useRouteScreenMode from '../hooks/useRouteScreenMode';
 import { MetricChip } from './ui/CareDroidPrimitives';
 import { persistCopilotInteractionSafely } from '../services/emergencyOsApi';
+import { AccountableRecommendationCard } from './ai/AccountableRecommendationCard';
+import AiRouteMetadata from './chat/AiRouteMetadata';
+import { accountableFromGatewayPayload } from '../utils/accountableFromGateway';
+import { abstainFromAiFailure } from '../services/aiFailureAbstention';
+import { normalizeAiFoundationMetadata } from '../services/clinicalChatService';
+import type { AccountableRecommendation } from '../contracts/accountableAi';
 
 type CopilotMessage = {
   id: string;
@@ -63,6 +68,11 @@ type CopilotMessage = {
   content: string;
   timestamp: Date;
   attachments?: CopilotAttachment[];
+  /** Stage G: structured evidence / safety envelope when available */
+  accountable?: AccountableRecommendation;
+  /** CareDroid gateway + unified AI node routing snapshot */
+  aiFoundation?: Record<string, unknown>;
+  aiGateway?: Record<string, unknown>;
 };
 
 type StoreCopilotMessage = ReturnType<typeof useEmergencyStore.getState>['copilotMessages'][number];
@@ -399,19 +409,9 @@ function panelMessagesFromStoreMessage(message: StoreCopilotMessage): CopilotMes
 
 function TypingIndicator() {
   return (
-    <div style={{ display: 'flex', gap: 4, padding: '4px 0' }} aria-label="Copilot typing">
+    <div className="ed-copilot-typing-indicator" aria-label="Copilot typing">
       {[0, 1, 2].map((index) => (
-        <span
-          key={index}
-          className="ed-copilot-typing-dot"
-          style={{
-            width: 6,
-            height: 6,
-            borderRadius: 999,
-            background: MEDICAL_THEME.inkSubtle,
-            animationDelay: `${index * 120}ms`,
-          }}
-        />
+        <span key={index} className="ed-copilot-typing-dot" />
       ))}
     </div>
   );
@@ -793,10 +793,11 @@ export function CopilotPanel() {
     recordWorkflowAction({
       type: COPILOT_PLATFORM.outputs.workflowActionType,
       title: 'Copilot used',
-      summary: `ED Copilot prompt submitted: ${promptText.slice(0, 80)}${promptText.length > 80 ? '...' : ''}`,
+      summary: `${resolveUnifiedChannelFromRole(String(emergencyRole.role || saasRole || ''), 'api') === 'reception' ? 'Reception Copilot' : 'ED Copilot'} prompt submitted: ${promptText.slice(0, 80)}${promptText.length > 80 ? '...' : ''}`,
       actorStaffId: 'current-user',
       source: COPILOT_PLATFORM.outputs.workflowSource,
       metadata: {
+        unifiedChannel: resolveUnifiedChannelFromRole(String(emergencyRole.role || saasRole || ''), 'api'),
         promptLength: promptText.length,
         multimodalAttachmentCount: submittedAttachments.length,
         multimodalAttachmentTypes: submittedAttachments.map((attachment) => attachment.type).join(', '),
@@ -852,6 +853,9 @@ export function CopilotPanel() {
         patientOrchestration,
       );
 
+      const callerRole = String(emergencyRole.role || saasRole || 'unknown');
+      const unifiedChannel = resolveUnifiedChannelFromRole(callerRole, 'api');
+      const isReceptionCopilot = unifiedChannel === 'reception';
       const response = await invokeUnifiedAiConversational({
         capabilityId: 'copilot',
         platformServiceId: 'copilot',
@@ -860,8 +864,10 @@ export function CopilotPanel() {
         message: promptText,
         messages: requestMessages,
         patientId: selectedPatient?.id,
-        sourceScreen: 'copilot_panel',
+        sourceScreen: isReceptionCopilot ? 'reception_copilot' : 'copilot_panel',
         context: {
+          userRole: callerRole,
+          unifiedChannel,
           aiRequest: {
             requestType: COPILOT_PLATFORM.identity.requestType,
             patientId: selectedPatient?.id,
@@ -870,6 +876,8 @@ export function CopilotPanel() {
             patientVitals: patientArtifactContext?.vitals,
           },
           edCopilot: {
+            channel: unifiedChannel,
+            receptionCopilot: isReceptionCopilot,
             patientCount: activePatients.length,
             highRiskCount,
             selectedPatientId: selectedPatient?.id || null,
@@ -919,39 +927,77 @@ export function CopilotPanel() {
 
       const responseText =
         typeof response.content === 'string' ? response.content : extractResponseText(response.data);
-      await streamIntoMessage(responseText, assistantId, setMessages);
+      const responsePayload =
+        response.data && typeof response.data === 'object'
+          ? (response.data as Record<string, unknown>)
+          : (response as unknown as Record<string, unknown>);
+      const accountable = accountableFromGatewayPayload(responsePayload, responseText);
+      const aiFoundation = normalizeAiFoundationMetadata(
+        (responsePayload.metadata as Record<string, unknown>) || {},
+      );
+      const aiGateway =
+        responsePayload.metadata &&
+        typeof responsePayload.metadata === 'object' &&
+        (responsePayload.metadata as { aiGateway?: Record<string, unknown> }).aiGateway
+          ? (responsePayload.metadata as { aiGateway: Record<string, unknown> }).aiGateway
+          : undefined;
+      await streamIntoMessage(accountable.content || responseText, assistantId, setMessages);
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === assistantId
+            ? { ...message, accountable, aiFoundation, aiGateway }
+            : message,
+        ),
+      );
       appendCopilotMessage({
         id: assistantId,
         query: promptText,
-        response: responseText,
-        safetyStatus: 'unknown',
+        response: accountable.content || responseText,
+        safetyStatus:
+          accountable.safety.status === 'ok'
+            ? 'safe'
+            : accountable.safety.status === 'degraded'
+              ? 'caution'
+              : accountable.safety.status === 'escalate' || accountable.safety.status === 'abstain'
+                ? 'blocked'
+                : 'unknown',
         createdAt: assistantMessage.timestamp.toISOString(),
-        raw: response.data,
+        raw: { ...(response.data as object), accountableRecommendation: accountable },
       });
       persistCopilotInteractionSafely({
         question: promptText,
         patientId: selectedPatient?.id,
         patientContextSummary: patientOrchestrationPrompt,
-        draftGuidance: responseText,
+        draftGuidance: accountable.content || responseText,
         userRole: emergencyRole.role,
-        requiresHumanReview: true,
+        requiresHumanReview: accountable.humanReviewRequired,
       });
-    } catch {
-      const fallbackResponse = COPILOT_PLATFORM.prompts.fallbackUnavailable.replace(
-        'CareDroid Copilot',
-        EMERGENCY_OS_BRANDING.copilotName,
-      );
-      await streamIntoMessage(
-        fallbackResponse,
-        assistantId,
-        setMessages,
+    } catch (error) {
+      const abstain = abstainFromAiFailure(error, {
+        provider: 'caredroid-copilot',
+        promptVersion: 'copilot-panel@1',
+      });
+      const fallbackResponse =
+        abstain.content ||
+        COPILOT_PLATFORM.prompts.fallbackUnavailable.replace(
+          'CareDroid Copilot',
+          EMERGENCY_OS_BRANDING.copilotName,
+        );
+      await streamIntoMessage(fallbackResponse, assistantId, setMessages);
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === assistantId
+            ? { ...message, content: fallbackResponse, accountable: abstain }
+            : message,
+        ),
       );
       appendCopilotMessage({
         id: assistantId,
         query: promptText,
         response: fallbackResponse,
-        safetyStatus: 'unknown',
+        safetyStatus: 'blocked',
         createdAt: assistantMessage.timestamp.toISOString(),
+        raw: { accountableRecommendation: abstain },
       });
     } finally {
       setLoading(false);
@@ -976,7 +1022,11 @@ export function CopilotPanel() {
 
   const copilotHeader = (
     <header className="ed-copilot-panel__header">
-      <span aria-label="Copilot panel active" className="ed-copilot-panel__live-dot" />
+      <span
+        role="status"
+        aria-label="Copilot panel active"
+        className="ed-copilot-panel__live-dot"
+      />
       <div className="ed-copilot-panel__identity">
         <span>{copilotChrome.productName}</span>
         {copilotSurfaces.showSafetyBadge ? (
@@ -1019,7 +1069,17 @@ export function CopilotPanel() {
       {messages.map((message) => (
         <div key={message.id} className="ed-copilot-panel__message" data-role={message.role}>
           <div className="ed-copilot-panel__bubble">
-            {message.content || (message.role === 'copilot' && loading ? <TypingIndicator /> : null)}
+            {message.role === 'copilot' && message.accountable ? (
+              <AccountableRecommendationCard recommendation={message.accountable} compact />
+            ) : (
+              message.content || (message.role === 'copilot' && loading ? <TypingIndicator /> : null)
+            )}
+            {message.role === 'copilot' && message.aiFoundation ? (
+              <AiRouteMetadata
+                aiFoundation={message.aiFoundation}
+                aiGateway={message.aiGateway}
+              />
+            ) : null}
             {message.attachments?.length ? (
               <div className="ed-copilot-panel__message-attachments">
                 {message.attachments.map((attachment) => (
@@ -1050,7 +1110,7 @@ export function CopilotPanel() {
         />
       ) : null}
       {loading && messages[messages.length - 1]?.content ? (
-        <div style={{ alignSelf: 'flex-start' }}>
+        <div className="ed-copilot-typing-indicator-wrap">
           <TypingIndicator />
         </div>
       ) : null}

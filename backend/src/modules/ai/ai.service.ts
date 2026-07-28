@@ -1,4 +1,12 @@
-import { Inject, Injectable, Optional, forwardRef } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  Optional,
+  forwardRef,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThanOrEqual } from 'typeorm';
@@ -31,8 +39,19 @@ import {
   type CareDroidAIIntent,
   type CareDroidAIRequest,
 } from '../../../../lib/ai/careDroidAI';
+import { listAdapterHealth } from '../../../../lib/ai/providers/registry';
+import { loadModelRegistryEntries } from '../../../../lib/ai/modelRegistry';
+import {
+  buildBlockedUnifiedResponse,
+  mapHeuristicNodeToUnifiedResponse,
+  validateUnifiedAiRequest,
+  type CareDroidUnifiedAIRequest,
+  type CareDroidUnifiedAIResponse,
+} from '../../../../lib/ai/unifiedAiContracts';
+import { reviewAIRequestForSafety } from '../../../../lib/ai/safetyPolicy';
 import { IntentClassifierService } from '../medical-control-plane/intent-classifier/intent-classifier.service';
 import { extractClassifiableText } from '../../../ml-services/shared/routing-maps';
+import { randomUUID } from 'crypto';
 
 interface RateLimitConfig {
   dailyLimit: number;
@@ -49,6 +68,7 @@ interface AiModelPricing {
 
 @Injectable()
 export class AIService {
+  private readonly logger = new Logger(AIService.name);
   private readonly rateLimits: Map<SubscriptionTier, RateLimitConfig>;
   private readonly aiPricing: Map<string, AiModelPricing>;
   private readonly toolDefinitions: ToolDefinition[];
@@ -529,6 +549,7 @@ export class AIService {
         userRole: String(request.context?.userRole || request.context?.tenant?.role || 'clinician'),
       });
       return {
+        nodeId: classification.nodeId || 'caredroid-unified-ai-node',
         primaryIntent: classification.primaryIntent,
         toolId: classification.toolId,
         artifactType: classification.artifactType,
@@ -536,8 +557,12 @@ export class AIService {
         confidence: classification.confidence,
         method: classification.method,
         isEmergency: classification.isEmergency,
+        matchedPatterns: classification.matchedPatterns,
       };
-    } catch {
+    } catch (error) {
+      this.logger.warn(
+        `[AIService] Intent classification failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       return null;
     }
   }
@@ -630,6 +655,377 @@ export class AIService {
       usedToday,
       remaining,
       resetAt: this.getNextResetTime(),
+    };
+  }
+
+  /**
+   * Provider health for direct API discovery — never includes API keys or secrets.
+   */
+  getProvidersHealth() {
+    const providers = listAdapterHealth().map((entry) => ({
+      provider: entry.provider,
+      ok: entry.ok,
+      configured: entry.configured,
+      detail: entry.detail,
+    }));
+    return {
+      generatedAt: new Date().toISOString(),
+      providers,
+      primaryProvider:
+        this.configService.get<string>('AI_PROVIDER') ||
+        this.configService.get<string>('ai.provider') ||
+        'anthropic',
+      fallbackProvider:
+        this.configService.get<string>('AI_FALLBACK_PROVIDER') ||
+        this.configService.get<string>('ai.fallbackProvider') ||
+        null,
+    };
+  }
+
+  getRegisteredModels() {
+    const entries = loadModelRegistryEntries();
+    return {
+      generatedAt: new Date().toISOString(),
+      count: entries.length,
+      models: entries.map((entry) => ({
+        id: entry.id,
+        displayName: entry.displayName,
+        kind: entry.kind,
+        status: entry.status,
+        provider: entry.provider,
+        modelIdentifier: entry.modelIdentifier,
+        purpose: entry.purpose,
+        regulatoryClass: entry.regulatoryClass,
+        featureFlag: entry.deployment?.featureFlag,
+        expiresAt: entry.expiresAt,
+      })),
+    };
+  }
+
+  getAiToolCatalog() {
+    const tools = this.getToolDefinitions().map((tool) => ({
+      name: tool.name,
+      description: tool.description,
+      riskLevel: 'moderate' as const,
+      requiresHumanApproval: true,
+      inputSchema: tool.input_schema,
+    }));
+    return {
+      generatedAt: new Date().toISOString(),
+      count: tools.length,
+      tools,
+      note: 'Legacy LLM function schemas. Canonical clinical executors live in tool-orchestrator.registry.ts.',
+    };
+  }
+
+  /**
+   * Canonical unified AI query path (AI_EXECUTION_PLAN §4–5).
+   * Validates envelope, applies safety, routes structured tasks to the heuristic
+   * CareDroid AI node when an intent can be resolved; otherwise returns a
+   * deterministic review-required response (no silent fake success).
+   */
+  async runUnifiedAiQuery(
+    userId: string,
+    body: Record<string, unknown>,
+    tenantContext?: {
+      organizationId?: string;
+      workspaceId?: string;
+      role?: string;
+      subscriptionPlan?: string;
+    },
+  ): Promise<CareDroidUnifiedAIResponse> {
+    const started = Date.now();
+    const requestId = String(body.requestId || randomUUID());
+    const correlationId = String(body.correlationId || randomUUID());
+
+    const candidate = {
+      requestId,
+      correlationId,
+      organizationId: String(body.organizationId || tenantContext?.organizationId || 'unknown-org'),
+      workspaceId: body.workspaceId
+        ? String(body.workspaceId)
+        : tenantContext?.workspaceId
+          ? String(tenantContext.workspaceId)
+          : undefined,
+      facilityId: body.facilityId ? String(body.facilityId) : undefined,
+      userId: String(body.userId || userId),
+      role: String(body.role || tenantContext?.role || 'unknown'),
+      permissions: Array.isArray(body.permissions) ? body.permissions.map(String) : ['use_ai_chat'],
+      channel: body.channel,
+      task: body.task,
+      patientContext: isPlainRecord(body.patientContext) ? body.patientContext : undefined,
+      encounterContext: isPlainRecord(body.encounterContext) ? body.encounterContext : undefined,
+      emsContext: isPlainRecord(body.emsContext) ? body.emsContext : undefined,
+      workflowContext: isPlainRecord(body.workflowContext) ? body.workflowContext : undefined,
+      documentContext: isPlainRecord(body.documentContext) ? body.documentContext : undefined,
+      query: String(body.query || ''),
+      requestedTools: Array.isArray(body.requestedTools)
+        ? body.requestedTools.map(String)
+        : undefined,
+      responseFormat: body.responseFormat || 'structured',
+      locale: body.locale ? String(body.locale) : undefined,
+    };
+
+    const validation = validateUnifiedAiRequest(candidate);
+    if (!validation.valid || !validation.request) {
+      return {
+        requestId,
+        correlationId,
+        status: 'failed',
+        responseType: 'error',
+        content: 'Request failed validation before model or tool execution.',
+        evidence: [],
+        citations: [],
+        uncertainty: [],
+        missingInformation: validation.errors.map((e) => `${e.field}: ${e.message}`),
+        limitations: ['Malformed requests are rejected without invoking a model.'],
+        toolExecutions: [],
+        model: { provider: 'none', model: 'none', fallbackApplied: false },
+        safety: {
+          allowed: false,
+          requiresHumanReview: true,
+          reasons: validation.errors.map((e) => e.message),
+          disclaimer: 'Human review required. This is not a replacement for clinical judgment.',
+        },
+        createdAt: new Date().toISOString(),
+      };
+    }
+
+    const request = validation.request as CareDroidUnifiedAIRequest;
+    const safety = reviewAIRequestForSafety({
+      prompt: request.query,
+      patientSpecific: Boolean(request.patientContext),
+    });
+    if (!safety.allowed) {
+      return buildBlockedUnifiedResponse({
+        requestId: request.requestId,
+        correlationId: request.correlationId,
+        reasons: safety.reasons,
+        disclaimer: safety.disclaimer,
+      });
+    }
+
+    const intent = resolveUnifiedTaskToIntent(request.task, request.channel);
+    if (intent) {
+      // CareDroid unified ML node (NLU + artifact-router) for routing metadata.
+      const unifiedNode = await this.classifyStructuredNodeInput(userId, {
+        intent,
+        input: {
+          query: request.query,
+          message: request.query,
+          ...(request.patientContext || {}),
+        },
+        context: { userRole: request.role },
+      });
+
+      const nodeResponse = await this.runCareDroidAINode(
+        userId,
+        {
+          intent,
+          input: {
+            ...(request.patientContext || {}),
+            ...(request.emsContext || {}),
+            ...(request.workflowContext || {}),
+            query: request.query,
+            message: request.query,
+            channel: request.channel,
+            task: request.task,
+          },
+          context: {
+            requestId: request.requestId,
+            sourceScreen: `unified:${request.channel}`,
+            userRole: request.role,
+            organizationId: request.organizationId,
+            workspaceId: request.workspaceId,
+            tenant: {
+              organizationId: request.organizationId,
+              workspaceId: request.workspaceId,
+              userId,
+              role: request.role,
+              subscriptionPlan: tenantContext?.subscriptionPlan,
+              source: 'unified_ai_query',
+            },
+            ...(unifiedNode ? { unifiedClassification: unifiedNode } : {}),
+          },
+        },
+        {
+          tenant: {
+            organizationId: request.organizationId,
+            workspaceId: request.workspaceId,
+            userId,
+            role: request.role,
+          },
+        },
+      );
+
+      const content = [
+        ...(nodeResponse.reasoning || []),
+        ...(nodeResponse.nextActions?.length
+          ? [`Next actions: ${nodeResponse.nextActions.join('; ')}`]
+          : []),
+      ]
+        .join(' ')
+        .trim();
+
+      const mapped = mapHeuristicNodeToUnifiedResponse({
+        requestId: request.requestId,
+        correlationId: request.correlationId,
+        intent: String(nodeResponse.intent),
+        status: nodeResponse.status === 'success' ? 'success' : 'error',
+        content: content || nodeResponse.status,
+        confidence: nodeResponse.confidence,
+        requiresClinicianReview: nodeResponse.requiresClinicianReview !== false,
+        model: unifiedNode ? 'caredroid-unified-ai-node+heuristic' : 'careDroidAI-node-v1',
+        latencyMs: Date.now() - started,
+        uncertainty: nodeResponse.warnings || [],
+        limitations: [nodeResponse.safetyDisclaimer],
+        humanReview: nodeResponse.requiresClinicianReview
+          ? { status: 'pending', reviewType: 'clinical_ai', severity: 'high' }
+          : undefined,
+      });
+
+      return {
+        ...mapped,
+        structuredData: {
+          heuristicIntent: nodeResponse.intent,
+          ...(unifiedNode ? { unifiedNode } : {}),
+        },
+      };
+    }
+
+    // Free-text / no structured task→intent map: still run the CareDroid unified
+    // ML node (NLU + artifact-router) so routing metadata is always present, then
+    // return a deterministic review-required answer (no silent LLM clinical claims).
+    let nodeRoute: Record<string, unknown> | null = null;
+    if (this.intentClassifier && request.query.trim().length >= 8) {
+      try {
+        const classification = await this.intentClassifier.classify(request.query, {
+          userId,
+          userRole: request.role,
+        });
+        nodeRoute = {
+          nodeId: classification.nodeId || 'caredroid-unified-ai-node',
+          primaryIntent: classification.primaryIntent,
+          toolId: classification.toolId,
+          artifactType: classification.artifactType,
+          artifactRouteConfidence: classification.artifactRouteConfidence,
+          confidence: classification.confidence,
+          method: classification.method,
+          isEmergency: classification.isEmergency,
+        };
+      } catch (error) {
+        this.logger.warn(
+          `[runUnifiedAiQuery] Unified node classify failed: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+    }
+
+    const routeSummary = nodeRoute
+      ? `Node route: intent=${String(nodeRoute.primaryIntent)} artifact=${String(nodeRoute.artifactType || 'n/a')} tool=${String(nodeRoute.toolId || 'n/a')} method=${String(nodeRoute.method)}.`
+      : 'Node route: unavailable for this request.';
+
+    return {
+      requestId: request.requestId,
+      correlationId: request.correlationId,
+      status: 'needs_human_review',
+      responseType: 'answer',
+      content: [
+        'CareDroid Unified AI Node received your request.',
+        `Channel: ${request.channel}; task: ${request.task}.`,
+        routeSummary,
+        'No foundation model was invoked for this path (safe default).',
+        'A licensed clinician must review before any clinical action.',
+        `Query: ${request.query.slice(0, 400)}`,
+      ].join(' '),
+      structuredData: nodeRoute ? { unifiedNode: nodeRoute } : undefined,
+      evidence: [],
+      citations: [],
+      confidence:
+        typeof nodeRoute?.confidence === 'number' ? (nodeRoute.confidence as number) : 0.35,
+      uncertainty: ['Deterministic unified path does not perform clinical reasoning.'],
+      missingInformation: [],
+      limitations: [
+        'Use structured node intents or an enabled foundation-model path for richer answers.',
+        'Local ML node provides routing only (NLU + artifact-type), not clinical advice.',
+      ],
+      toolExecutions: nodeRoute?.toolId
+        ? [
+            {
+              toolName: String(nodeRoute.toolId),
+              status: 'skipped' as const,
+              requiresHumanApproval: true,
+            },
+          ]
+        : [],
+      model: {
+        provider: 'local',
+        model: nodeRoute ? 'caredroid-unified-ai-node' : 'unified-ai-deterministic-v1',
+        latencyMs: Date.now() - started,
+        fallbackApplied: false,
+      },
+      safety: {
+        allowed: true,
+        requiresHumanReview: true,
+        reasons: [
+          'unified_deterministic_path',
+          'clinician_review_required',
+          ...(nodeRoute?.isEmergency ? ['emergency_signal_from_node'] : []),
+        ],
+        disclaimer: safety.disclaimer,
+      },
+      humanReview: { status: 'pending', reviewType: 'clinical_ai', severity: 'high' },
+      createdAt: new Date().toISOString(),
+    };
+  }
+
+  async getRequestById(
+    userId: string,
+    requestId: string,
+    tenantContext?: { organizationId?: string; workspaceId?: string },
+  ) {
+    const record = await this.aiQueryRepository.findOne({ where: { id: requestId } });
+    if (!record) {
+      throw new NotFoundException(`AI request ${requestId} was not found`);
+    }
+    if (record.userId !== userId) {
+      throw new ForbiddenException('AI request does not belong to the authenticated user');
+    }
+    if (
+      tenantContext?.organizationId &&
+      record.organizationId &&
+      record.organizationId !== tenantContext.organizationId
+    ) {
+      throw new ForbiddenException('AI request is outside the active organization scope');
+    }
+
+    return {
+      id: record.id,
+      status: record.status,
+      feature: record.feature,
+      model: record.model,
+      modelVersion: record.modelVersion,
+      modelClass: record.modelClass,
+      intentClassified: record.intentClassified,
+      toolUsed: record.toolUsed,
+      requiresHumanReview: record.requiresHumanReview,
+      latencyMs: record.latencyMs,
+      totalTokens: record.totalTokens,
+      estimatedCost: record.estimatedCost,
+      cost: record.cost,
+      organizationId: record.organizationId,
+      workspaceId: record.workspaceId,
+      createdAt: record.createdAt,
+      // Prompt/response bodies are stored redacted — never re-expand PHI here.
+      prompt: record.prompt,
+      response: record.response,
+      metadata: {
+        routingExpert: record.routingExpert,
+        retrievalPolicy: record.retrievalPolicy,
+        assetId: record.assetId,
+        agentId: record.agentId,
+      },
     };
   }
 
@@ -1191,4 +1587,24 @@ export class AIService {
     const hours = this.resolveReviewSeverity(query) === 'critical' ? 4 : 24;
     return new Date(Date.now() + hours * 60 * 60 * 1000);
   }
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function resolveUnifiedTaskToIntent(task: string, channel: string): CareDroidAIIntent | null {
+  if (task === 'prepare_handoff') {
+    return channel === 'ems' ? 'ems_prearrival_risk_summary' : 'handoff_summary';
+  }
+  if (task === 'suggest_next_action' && channel === 'triage') return 'triage_recommendation';
+  if (
+    task === 'detect_missing_information' ||
+    (task === 'answer_question' && channel === 'reception')
+  ) {
+    return 'patient_intake_assist';
+  }
+  if (task === 'explain_alert') return 'critical_alert_assessment';
+  if (task === 'forecast_operations') return 'hospital_command_insight';
+  return null;
 }

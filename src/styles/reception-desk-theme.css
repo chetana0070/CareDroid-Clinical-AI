@@ -1,70 +1,140 @@
 /**
- * Reception / registration desk — shared surface tokens and accents.
- * Import once on the reception route (ReceptionWorkspace).
+ * Reception desk theme — CDL dual-mode (light + dark).
+ * Never hardcode pure white chrome; inherit --cdl-* so create/intake matches the dashboard.
  */
 
-.reception-workspace {
-  --reception-accent: var(--app-accent-interactive, var(--status-info, #0ea5e9));
-  --reception-accent-strong: color-mix(in srgb, var(--reception-accent) 14%, var(--ed-surface-raised, var(--medical-surface-card, #ffffff)));
-  --reception-accent-border: color-mix(in srgb, var(--reception-accent) 38%, var(--ed-border-subtle, var(--medical-border, #e0f2fe)));
-  --reception-surface-card: var(--color-card, var(--ed-surface-overlay, var(--medical-surface-card, #ffffff)));
-  --reception-surface-inset: var(--color-elevated, var(--ed-surface-raised, var(--medical-surface-muted)));
-  --reception-text-primary: var(--ed-text-primary, var(--color-text-primary, var(--medical-ink, #111827)));
-  --reception-text-secondary: var(--ed-text-secondary, var(--color-text-secondary, var(--medical-ink-muted, #6b7280)));
-  --reception-border: var(--ed-border-subtle, var(--color-border-subtle, var(--medical-border)));
-  --reception-radius-lg: var(--ed-radius-lg, 14px);
-  --reception-radius-md: var(--ed-radius-md, 10px);
-  --reception-success: var(--status-success, #34d399);
-  --reception-warning: var(--status-warning, #fbbf24);
-  --reception-danger: var(--status-danger, #f87171);
-}
+.reception-front-door,
+.reception-workspace,
+.reception-page-layout {
+  --reception-accent: var(--cdl-brand-600, #0284c7);
+  --reception-accent-soft: var(--cdl-info-bg, #f0f9ff);
+  --reception-surface-page: var(--cdl-surface-page, #f8fafc);
+  --reception-surface-card: var(--cdl-surface-card, #ffffff);
+  --reception-surface-inset: var(--cdl-surface-muted, #f1f5f9);
+  --reception-text-primary: var(--cdl-ink, #0f172a);
+  --reception-text-secondary: var(--cdl-ink-muted, #334155);
+  --reception-border: var(--cdl-border, #e2e8f0);
+  --reception-border-strong: var(--cdl-border-strong, #cbd5e1);
+  --reception-radius-lg: var(--cdl-radius-lg, 12px);
+  --reception-radius-md: var(--cdl-radius-md, 8px);
+  --reception-success: var(--cdl-ok, #047857);
+  --reception-warning: var(--cdl-warning, #b45309);
+  --reception-danger: var(--cdl-critical, #dc2626);
+  --reception-shadow-card: var(--cdl-elev-1);
+  --reception-shadow-button: none;
+  --reception-hover-bg: color-mix(in srgb, var(--cdl-ink) 4%, transparent);
+  --reception-active-bg: color-mix(in srgb, var(--cdl-ink) 6%, transparent);
+  --reception-focus: var(--cdl-focus-ring);
 
-.reception-workspace .emergency-route-page__hero,
-.reception-workspace .arrival-dashboard,
-.reception-workspace .reception-work-queues,
-.reception-workspace .recent-arrivals,
-.reception-workspace .reception-quick-intake-inline .reception-quick-intake {
-  border-color: var(--reception-border);
-  background: var(--reception-surface-card);
+  background: var(--reception-surface-page);
   color: var(--reception-text-primary);
 }
 
-.reception-workspace .reception-pipeline-shell__stage {
-  border-color: var(--reception-border);
+html[data-theme='dark'] .reception-front-door,
+html[data-theme='dark'] .reception-workspace,
+html[data-theme='dark'] .reception-page-layout {
+  --reception-hover-bg: color-mix(in srgb, #fff 6%, transparent);
+  --reception-active-bg: color-mix(in srgb, #fff 10%, transparent);
+}
+
+/* Cards / panels — CDL surfaces only (no forced #fff) */
+.reception-front-door .reception-card,
+.reception-front-door .reception-command-panel,
+.reception-front-door .cdl-card,
+.reception-workspace .reception-card,
+.reception-workspace .reception-command-panel {
+  background: var(--reception-surface-card) !important;
+  border: 1px solid var(--reception-border) !important;
+  box-shadow: var(--reception-shadow-card) !important;
+  border-radius: var(--reception-radius-lg) !important;
+  color: var(--reception-text-primary);
+}
+
+/* Default buttons — muted surface, not chalk white */
+.reception-front-door button:not([class*='ghost']):not([class*='link']):not(.reception-header__action-btn--primary):not(.unified-intake-actionbar__primary):not(.reception-prepare__option--primary),
+.reception-workspace button:not([class*='ghost']):not([class*='link']):not(.reception-header__action-btn--primary):not(.unified-intake-actionbar__primary) {
   background: var(--reception-surface-inset);
-  color: var(--reception-text-secondary);
+  border: 1px solid var(--reception-border);
+  box-shadow: none;
+  border-radius: var(--reception-radius-md);
+  color: var(--reception-text-primary);
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
-.reception-workspace .reception-pipeline-shell__stage--active {
-  border-color: var(--reception-accent-border);
-  background: var(--reception-accent-strong);
+.reception-front-door button:not([class*='ghost']):not([class*='link']):hover,
+.reception-workspace button:not([class*='ghost']):not([class*='link']):hover {
+  background: var(--reception-hover-bg);
+  border-color: var(--reception-border-strong);
+  transform: none;
+  box-shadow: none;
+}
+
+.reception-front-door button:not([class*='ghost']):not([class*='link']):active,
+.reception-workspace button:not([class*='ghost']):not([class*='link']):active {
+  background: var(--reception-active-bg);
+  transform: none;
+}
+
+/* Primary CTAs — brand solid */
+.reception-front-door .reception-header__action-btn--primary,
+.reception-front-door .unified-intake-actionbar__primary,
+.reception-front-door .reception-prepare__option--primary,
+.reception-workspace .reception-header__action-btn--primary,
+.reception-workspace .unified-intake-actionbar__primary {
+  background: var(--cdl-brand-600, #0284c7) !important;
+  border-color: var(--cdl-brand-600, #0284c7) !important;
+  color: var(--cdl-on-brand, #ffffff) !important;
+  font-weight: 800;
+}
+
+.reception-front-door .reception-header__action-btn--primary:hover,
+.reception-front-door .unified-intake-actionbar__primary:hover,
+.reception-workspace .reception-header__action-btn--primary:hover {
+  filter: brightness(1.05);
+  background: var(--cdl-brand-500, #0ea5e9) !important;
+  border-color: var(--cdl-brand-500, #0ea5e9) !important;
+}
+
+/* Form controls */
+.reception-front-door input,
+.reception-front-door select,
+.reception-front-door textarea,
+.reception-workspace input,
+.reception-workspace select,
+.reception-workspace textarea {
+  background: var(--cdl-surface-card, var(--app-input-bg, #fff));
+  border: 1px solid var(--reception-border-strong);
+  border-radius: var(--reception-radius-md);
   color: var(--reception-text-primary);
 }
 
-.reception-workspace .arrival-control-summary__metric {
-  border-color: var(--reception-border);
-  background: var(--reception-surface-inset);
-  color: var(--reception-text-primary);
+html[data-theme='dark'] .reception-front-door input,
+html[data-theme='dark'] .reception-front-door select,
+html[data-theme='dark'] .reception-front-door textarea,
+html[data-theme='dark'] .reception-workspace input,
+html[data-theme='dark'] .reception-workspace select,
+html[data-theme='dark'] .reception-workspace textarea {
+  background: var(--cdl-surface-inset, #0f172a);
+  border-color: var(--cdl-border-strong, #475569);
+  color: var(--cdl-ink, #f8fafc);
 }
 
-.reception-workspace .arrival-control-summary__metric:not(:disabled):hover {
-  border-color: var(--reception-accent-border);
-  background: var(--reception-accent-strong);
+.reception-front-door input:focus-visible,
+.reception-front-door select:focus-visible,
+.reception-front-door textarea:focus-visible,
+.reception-workspace input:focus-visible,
+.reception-workspace select:focus-visible,
+.reception-workspace textarea:focus-visible {
+  outline: none;
+  box-shadow: var(--reception-focus);
+  border-color: var(--cdl-brand-500, #0ea5e9);
 }
 
-.reception-workspace .reception-work-queues__tab--active,
-.reception-workspace .reception-desk-toolbar__action--active {
-  border-color: var(--reception-accent-border);
-  background: var(--reception-accent-strong);
-  color: var(--reception-text-primary);
-}
-
-.reception-workspace .reception-workspace__action--primary {
-  border-color: var(--reception-accent-border);
-  background: var(--reception-accent-strong);
-}
-
-.reception-workspace .reception-workspace__banner {
-  border-color: color-mix(in srgb, var(--reception-success) 42%, transparent);
-  background: color-mix(in srgb, var(--reception-success) 14%, var(--reception-surface-inset));
+.reception-front-door ::placeholder,
+.reception-workspace ::placeholder {
+  color: var(--cdl-ink-subtle, #64748b);
+  opacity: 1;
 }

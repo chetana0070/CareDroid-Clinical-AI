@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { MEDICAL_THEME } from '../../config/medicalTheme.constants';
 import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { CANONICAL_ROUTES } from '../../config/routes.config';
 import { PatientFlag, PatientState } from '../../types/emergency';
@@ -35,11 +34,15 @@ import {
 } from './emergencyRouteShared';
 import QueueReasonBadge from '../../components/queues/QueueReasonBadge';
 import { AiChiefRouteRecommendationsPanel } from '../../components/ai/AiChiefRouteRecommendationsPanel';
+import StateSourceNotice from '../../components/StateSourceNotice';
+import { buildSessionEngineSourceDetails } from '../../config/shellEngineCatalog';
+import { DEMO_LIVE_STATES } from '../../utils/demoLiveState';
 import {
   clearPatientRouteParam,
   PATIENT_ROUTE_PARAM_KEYS,
   readPatientRouteContext,
 } from '../../utils/receptionQueryParams';
+import { AlarmBanner, AlarmKpi } from '../../alarm';
 
 
 export function PatientsRoute() {
@@ -150,17 +153,29 @@ export function PatientsRoute() {
         backendAvailable={backendAvailable}
         compact
       />
-      <MetricGrid
-        metrics={[
-          { label: 'Total patients', value: patients.length, color: MEDICAL_THEME.accent },
-          { label: 'High risk', value: patients.filter(isHighRisk).length, color: '#EF4444' },
-          {
-            label: 'Waiting',
-            value: patients.filter((patient) => patient.state === PatientState.Waiting).length,
-            color: '#F59E0B',
-          },
-        ]}
-      />
+      {highRiskCount > 0 ? (
+        <AlarmBanner
+          severity="critical"
+          title={`${highRiskCount} high-risk patient${highRiskCount === 1 ? '' : 's'} on the board`}
+          message="Open a patient card to review flags, assignment, and next clinical action. AI suggestions require human review."
+          actions={[{ id: 'review', label: 'Review list', variant: 'primary' }]}
+        />
+      ) : null}
+      <div className="cdl-alarm-kpi-rail emergency-route-metric-kpi-rail" aria-label="Department patient metrics">
+        <AlarmKpi severity="info" value={patients.length} label="Total patients" />
+        <AlarmKpi
+          severity={highRiskCount > 0 ? 'critical' : 'ok'}
+          value={highRiskCount}
+          label="High risk"
+          acknowledged={highRiskCount === 0}
+        />
+        <AlarmKpi
+          severity={waitingCount > 0 ? 'warning' : 'ok'}
+          value={waitingCount}
+          label="Waiting"
+          acknowledged={waitingCount === 0}
+        />
+      </div>
       {surfaces.emergencyRoutes.showJourneyEngineCard ? (
         <>
           <ApiStateBanner
@@ -394,15 +409,16 @@ export function QueueRoute() {
       />
       <MetricGrid
         metrics={[
-          { label: 'Total queued', value: queueMetrics.totalQueued, color: MEDICAL_THEME.accent },
+          { label: 'Total queued', value: queueMetrics.totalQueued, tone: 'info' },
           {
             label: 'Breached queues',
             value: queueMetrics.breachedQueues,
-            color: queueMetrics.breachedQueues ? '#EF4444' : '#10B981',
+            tone: queueMetrics.breachedQueues ? 'critical' : 'success',
           },
           {
             label: effectiveQueueFilter ? 'Filtered queue' : 'Tracked queues',
             value: effectiveQueueFilter || visibleQueueRows.length,
+            tone: 'neutral',
           },
         ]}
       />
@@ -455,7 +471,7 @@ export function QueueRoute() {
                       const patientBreached = patientWait > target;
                       const alreadyEscalated = escalatedIds.has(patient.id);
                       return (
-                        <span key={patient.id} className="emergency-route-queue-row__patient" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <span key={patient.id} className="emergency-route-queue-row__patient emergency-route-queue-row__patient--inline">
                           <button
                             type="button"
                             onClick={() => selectPatient(patient.id)}
@@ -478,23 +494,13 @@ export function QueueRoute() {
                                 escalatePatient(patient.id, { staffId: 'charge-nurse-current', staffName: 'Charge Nurse' });
                                 setEscalatedIds((prev) => new Set([...prev, patient.id]));
                               }}
-                              style={{
-                                padding: '1px 7px',
-                                borderRadius: 4,
-                                background: '#EF4444',
-                                color: '#fff',
-                                border: 'none',
-                                fontSize: 10,
-                                fontWeight: 800,
-                                cursor: 'pointer',
-                                letterSpacing: '0.04em',
-                              }}
+                              className="emergency-route-queue-row__escalate-btn"
                             >
                               ⚡ Escalate
                             </button>
                           )}
                           {alreadyEscalated && (
-                            <span style={{ fontSize: 10, fontWeight: 700, color: '#10B981' }}>✓ Escalated</span>
+                            <span className="emergency-route-queue-row__escalated-badge">✓ Escalated</span>
                           )}
                         </span>
                       );
@@ -597,10 +603,14 @@ export function ReassessmentRoute() {
           {
             label: 'Due now',
             value: prioritizedDuePatients.length,
-            color: prioritizedDuePatients.length ? '#F59E0B' : '#10B981',
+            tone: prioritizedDuePatients.length ? 'warning' : 'success',
           },
-          { label: 'Overdue', value: overdueCount, color: '#EF4444' },
-          { label: 'Next action', value: reassessment.data?.data?.nextAction || 'Review queue' },
+          { label: 'Overdue', value: overdueCount, tone: overdueCount ? 'critical' : 'success' },
+          {
+            label: 'Next action',
+            value: reassessment.data?.data?.nextAction || 'Review queue',
+            tone: 'info',
+          },
         ]}
       />
       <PatientGrid patients={prioritizedDuePatients} emptyMessage="No reassessments are due right now." />
@@ -691,6 +701,14 @@ export function CapacityRoute() {
       situationBrief={capacitySituationBrief}
     >
       <FlowCapacityViewTabs activeView={activeView} onViewChange={setActiveView} />
+      <StateSourceNotice
+        title="Capacity data source"
+        states={[
+          backendAvailable ? DEMO_LIVE_STATES.LIVE : DEMO_LIVE_STATES.BACKEND_UNAVAILABLE,
+          DEMO_LIVE_STATES.SESSION_ENGINE,
+        ]}
+        details={buildSessionEngineSourceDetails(['capacity', 'alertsPoll'])}
+      />
       {activeView === 'boarding' ? (
         <>
           <OperationalModuleState
@@ -700,13 +718,21 @@ export function CapacityRoute() {
           />
           <MetricGrid
             metrics={[
-              { label: 'Boarding patients', value: boardingPatients.length, color: '#F59E0B' },
+              {
+                label: 'Boarding patients',
+                value: boardingPatients.length,
+                tone: boardingPatients.length ? 'warning' : 'success',
+              },
               {
                 label: 'Longest boarding',
                 value: `${boarding.data?.data?.longestBoardingMinutes ?? 0}m`,
-                color: '#F97316',
+                tone: 'urgent',
               },
-              { label: 'Escalation', value: boarding.data?.data?.escalation || 'No escalation' },
+              {
+                label: 'Escalation',
+                value: boarding.data?.data?.escalation || 'No escalation',
+                tone: 'info',
+              },
             ]}
           />
           <PatientGrid patients={boardingPatients} emptyMessage="No active boarding patients." />
@@ -724,13 +750,29 @@ export function CapacityRoute() {
               {
                 label: 'Capacity score',
                 value: `${capacity.score} ${capacity.band}`,
-                color: MEDICAL_THEME.accent,
+                tone: 'info',
               },
-              { label: 'Occupied rooms', value: capacity.occupiedRooms },
-              { label: 'Available rooms', value: availableRooms, color: '#10B981' },
-              { label: 'Blocked rooms', value: blockedRooms, color: '#F97316' },
-              { label: 'Boarding patients', value: capacity.boardingCount, color: '#F59E0B' },
-              { label: 'Reassessment due', value: capacity.reassessmentDue, color: '#EF4444' },
+              { label: 'Occupied rooms', value: capacity.occupiedRooms, tone: 'neutral' },
+              {
+                label: 'Available rooms',
+                value: availableRooms,
+                tone: availableRooms ? 'success' : 'warning',
+              },
+              {
+                label: 'Blocked rooms',
+                value: blockedRooms,
+                tone: blockedRooms ? 'urgent' : 'success',
+              },
+              {
+                label: 'Boarding patients',
+                value: capacity.boardingCount,
+                tone: capacity.boardingCount ? 'warning' : 'success',
+              },
+              {
+                label: 'Reassessment due',
+                value: capacity.reassessmentDue,
+                tone: capacity.reassessmentDue ? 'critical' : 'success',
+              },
             ]}
           />
           {capacityStatus.data?.data?.recommendations?.length ? (
@@ -829,16 +871,23 @@ export function CopilotRoute() {
       {showRouteMetrics ? (
         <MetricGrid
           metrics={[
-            { label: 'Active patients', value: promptContext.patientCount ?? activePatients.length },
+            {
+              label: 'Active patients',
+              value: promptContext.patientCount ?? activePatients.length,
+              tone: 'info',
+            },
             {
               label: 'High risk',
               value: promptContext.highRiskCount ?? highRiskPatients.length,
-              color: '#EF4444',
+              tone:
+                (promptContext.highRiskCount ?? highRiskPatients.length) > 0
+                  ? 'critical'
+                  : 'success',
             },
             {
               label: 'Capacity band',
               value: promptContext.capacity?.band ?? capacity.band,
-              color: MEDICAL_THEME.accent,
+              tone: 'info',
             },
           ]}
         />

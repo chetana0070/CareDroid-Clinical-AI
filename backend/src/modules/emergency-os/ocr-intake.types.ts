@@ -29,6 +29,18 @@ export interface OcrJobAuditEntry {
   details: Record<string, unknown>;
 }
 
+/** Demographics committed only after human review (or high-confidence bulk accept). */
+export type OcrAppliedDemographicsPatch = {
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: string;
+  sex?: string;
+  phone?: string;
+  address?: string;
+  nationalId?: string;
+  healthCardNumber?: string;
+};
+
 export interface OcrJob {
   id: string;
   status: OcrJobStatus;
@@ -47,6 +59,10 @@ export interface OcrJob {
   reviewedAt?: string;
   appliedToIntake: boolean;
   appliedAt?: string;
+  /** Authoritative demographics derived only from accepted/edited fields. */
+  appliedDemographics?: OcrAppliedDemographicsPatch;
+  /** True when apply also updated the emergency patient board record. */
+  patientUpdated?: boolean;
   errorMessage?: string;
   createdBy: string;
   createdAt: string;
@@ -89,6 +105,9 @@ export interface OcrProviderResult {
 export interface OcrProvider {
   readonly name: string;
   extract(input: OcrProviderExtractInput): Promise<OcrProviderResult>;
+  /** Releases any held resources (e.g. a live OCR worker). Optional — providers
+   * with nothing to release (like a pure text-parsing mock) need not implement it. */
+  terminate?(): Promise<void>;
 }
 
 export type OcrServiceHealthStatus = 'healthy' | 'degraded' | 'down';

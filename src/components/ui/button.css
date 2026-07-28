@@ -93,8 +93,8 @@
 }
 
 .btn-primary:hover {
-  background: var(--app-accent-hover);
-  border-color: var(--app-accent-hover);
+  background: #111827;
+  border-color: #111827;
   box-shadow: var(--app-elevation-card, var(--app-shadow-1));
   transform: none;
 }
@@ -127,7 +127,7 @@
 
 .btn-danger {
   background: var(--app-danger);
-  color: var(--app-danger-contrast);
+  color: var(--app-on-solid);
   border-color: color-mix(in srgb, var(--app-danger) 88%, transparent);
   box-shadow: var(--app-elevation-subtle, var(--app-shadow-1));
 }
@@ -140,7 +140,7 @@
 
 .btn-success {
   background: var(--app-success);
-  color: var(--app-success-contrast);
+  color: var(--app-on-solid);
   border-color: color-mix(in srgb, var(--app-success) 88%, transparent);
   box-shadow: var(--app-elevation-subtle, var(--app-shadow-1));
 }

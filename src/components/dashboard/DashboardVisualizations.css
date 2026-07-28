@@ -55,16 +55,31 @@
   background: color-mix(in srgb, var(--app-success) 9%, var(--app-surface-1));
 }
 
+.dashboard-metric-card--good strong,
+.dashboard-status-card--good strong {
+  color: var(--app-success);
+}
+
 .dashboard-metric-card--warning,
 .dashboard-status-card--warning {
   border-color: color-mix(in srgb, var(--app-warning) 38%, transparent);
   background: color-mix(in srgb, var(--app-warning) 10%, var(--app-surface-1));
 }
 
+.dashboard-metric-card--warning strong,
+.dashboard-status-card--warning strong {
+  color: var(--app-warning);
+}
+
 .dashboard-metric-card--critical,
 .dashboard-status-card--critical {
   border-color: color-mix(in srgb, var(--app-danger) 38%, transparent);
   background: color-mix(in srgb, var(--app-danger) 10%, var(--app-surface-1));
+}
+
+.dashboard-metric-card--critical strong,
+.dashboard-status-card--critical strong {
+  color: var(--app-danger);
 }
 
 .dashboard-visual-grid {
@@ -78,6 +93,16 @@
   border-radius: var(--compact-panel-radius, 14px);
   padding: var(--compact-panel-padding, 14px);
   overflow: hidden;
+}
+
+/* A grid item with overflow:hidden gets an implied automatic minimum
+   size of 0 rather than its content's natural size (CSS Grid/Flexbox
+   spec) — when this panel is a direct grid item (no intermediate
+   chart-specific grid wrapper, e.g. Competencies/Credentials), the row
+   collapsed to ~42px, clipping the entire .dashboard-chart (210px) below
+   it. Restoring an explicit minimum only for chart-bearing panels. */
+.dashboard-visual-panel:has(.dashboard-chart) {
+  min-height: 300px;
 }
 
 .dashboard-visual-panel__header {
@@ -105,8 +130,8 @@
 .dashboard-visual-panel__badge {
   border-radius: 999px;
   padding: 5px 10px;
-  background: color-mix(in srgb, var(--app-accent-interactive) 12%, transparent);
-  color: var(--app-accent-interactive);
+  background: color-mix(in srgb, #374151 12%, transparent);
+  color: #374151;
   font-size: 0.75rem;
   font-weight: 800;
 }

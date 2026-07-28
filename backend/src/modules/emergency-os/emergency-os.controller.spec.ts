@@ -1,6 +1,8 @@
 import { Test } from '@nestjs/testing';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthorizationGuard } from '../auth/guards/authorization.guard';
+import { PERMISSIONS_KEY } from '../auth/decorators/permissions.decorator';
+import { Permission } from '../auth/enums/permission.enum';
 import { EmergencyOsController } from './emergency-os.controller';
 import {
   FederatedLearningService,
@@ -617,6 +619,56 @@ describe('EmergencyOsController', () => {
     }
   });
 
+  it('persists EMS handoff completion as a workflow audit record', () => {
+    const created = controller.createIntakePatient({
+      mrn: 'ED-EMS-HANDOFF-1',
+      firstName: 'EMS',
+      lastName: 'Handoff',
+      chiefComplaint: 'EMS pre-arrival: chest pain',
+      complaintCategory: 'Cardiac',
+      flags: ['EMSArrival'],
+    });
+    const patientId = created.data.patient.id;
+    const result = controller.postEmsHandoff({
+      arrivalId: 'ems-arrival-test-1',
+      patientId,
+      actorName: 'Charge Nurse',
+      unitId: 'Unit-7',
+      unitName: 'Medic 7',
+      chiefComplaint: 'Chest pain',
+      handoffAcceptedAt: '2026-07-15T12:00:00.000Z',
+      checklist: { handoffAccepted: true },
+    });
+
+    expect(result).toMatchObject({
+      module: 'EMS Handoff',
+      data: {
+        ok: true,
+        arrivalId: 'ems-arrival-test-1',
+        patientId,
+        status: 'Complete',
+        handoffCompletedAt: '2026-07-15T12:00:00.000Z',
+        workflowLogId: expect.any(String),
+      },
+    });
+
+    const logs = controller.getWorkflowLogs();
+    const handoffLogs = logs.data.logs.filter((log) => log.metadata?.handoff === 'ems.handoff');
+    expect(handoffLogs.length).toBeGreaterThanOrEqual(1);
+    expect(handoffLogs[0]).toMatchObject({
+      patientId,
+      source: 'ems-pipeline',
+    });
+  });
+
+  it('rejects EMS handoff without arrivalId', () => {
+    const result = controller.postEmsHandoff({ patientId: 'p-1' });
+    expect(result).toMatchObject({
+      module: 'EMS Handoff',
+      data: { ok: false, error: 'arrivalId is required' },
+    });
+  });
+
   it('filters patient-flow and clinical intelligence harness endpoints by patient id', () => {
     const created = controller.createIntakePatient({
       id: 'upgrade-harness-patient-1',
@@ -652,5 +704,64 @@ describe('EmergencyOsController', () => {
         }),
       ]),
     );
+  });
+
+  // extract/review were reachable by any authenticated user with no
+  // permission check at all and skipped the HIPAA patient-access audit
+  // trail their own sibling GET route performs on the same resource — the
+  // same "PHI-writing route open" bug class already fixed once in
+  // ArtifactsController (see artifacts.controller.spec.ts). Locks in that
+  // both now require WRITE_PHI, matching the module's ems/handoff and
+  // reception/handoff mutation routes.
+  const documentArtifactWriteRoutes: Array<keyof EmergencyOsController> = [
+    'extractPatientDocumentArtifacts',
+    'reviewPatientDocumentArtifact',
+  ];
+
+  it.each(documentArtifactWriteRoutes)('%s requires WRITE_PHI permission', (method) => {
+    const permissions = Reflect.getMetadata(
+      PERMISSIONS_KEY,
+      EmergencyOsController.prototype[method],
+    );
+    expect(permissions).toEqual([Permission.WRITE_PHI]);
+  });
+
+  it('logs a HIPAA patient-access audit entry when extracting document artifacts', async () => {
+    const auditSpy = jest.spyOn(EmergencyPatientAuditService.prototype, 'logPatientAccess');
+
+    await controller.extractPatientDocumentArtifacts(
+      'patient-doc-artifact-1',
+      { rawText: 'Chief complaint: chest pain' } as any,
+      undefined,
+      {} as any,
+    );
+
+    expect(auditSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        patientId: 'patient-doc-artifact-1',
+        resource: 'emergency/patients/patient-doc-artifact-1/document-artifacts/extract',
+      }),
+    );
+    auditSpy.mockRestore();
+  });
+
+  it('logs a HIPAA patient-access audit entry when reviewing a document artifact', async () => {
+    const auditSpy = jest.spyOn(EmergencyPatientAuditService.prototype, 'logPatientAccess');
+
+    await controller.reviewPatientDocumentArtifact(
+      'patient-doc-artifact-1',
+      'artifact-1',
+      { reviewStatus: 'accepted', reviewer: 'nurse-1' } as any,
+      undefined,
+      {} as any,
+    );
+
+    expect(auditSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        patientId: 'patient-doc-artifact-1',
+        resource: 'emergency/patients/patient-doc-artifact-1/document-artifacts/artifact-1/review',
+      }),
+    );
+    auditSpy.mockRestore();
   });
 });

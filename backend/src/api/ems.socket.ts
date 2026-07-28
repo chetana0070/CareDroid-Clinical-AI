@@ -6,27 +6,29 @@ import {
   edgeAIAmbulanceService,
   type VitalSignStream,
 } from '../services/edge-ai-ambulance.service';
-
 type CorsOrigin = string | string[] | boolean;
-
+export type SocketAuthMiddleware = Parameters<Server['use']>[0];
 const logger = new Logger('EMSWebSocket');
-
+const denyUnauthenticatedSocket: SocketAuthMiddleware = (_socket, next) => {
+  next(new Error('Authentication required.'));
+};
 export function registerEMSWebSocketSupport(
   app: Express,
   server: HttpServer,
   corsOrigins: CorsOrigin = false,
+  authMiddleware: SocketAuthMiddleware = denyUnauthenticatedSocket,
 ): Server {
   const io = new Server(server, { cors: { origin: corsOrigins, credentials: true } });
+  io.use(authMiddleware);
   const connections = new Map<string, string>();
-
   io.on('connection', (socket) => {
     logger.log(`Client connected: ${socket.id}`);
-
-    socket.on('join-whiteboard', (userId: string) => {
+    socket.on('join-whiteboard', () => {
+      const userId = typeof socket.data.user?.id === 'string' ? socket.data.user.id : null;
+      if (!userId) return;
       connections.set(userId, socket.id);
       socket.join('whiteboard');
     });
-
     socket.on('disconnect', () => {
       logger.log(`Client disconnected: ${socket.id}`);
       for (const [userId, socketId] of connections.entries()) {
@@ -34,29 +36,27 @@ export function registerEMSWebSocketSupport(
       }
     });
   });
-
   app.set('io', io);
   return io;
 }
-
 export function registerEdgeAIAmbulanceWebSocketSupport(
   app: Express,
   server: HttpServer,
   service = edgeAIAmbulanceService,
   corsOrigins: CorsOrigin = false,
+  authMiddleware: SocketAuthMiddleware = denyUnauthenticatedSocket,
 ): Server {
   const io = new Server(server, {
     path: '/ws/edge-ai/ambulance',
     cors: { origin: corsOrigins, credentials: true },
   });
-
+  io.use(authMiddleware);
   io.on('connection', (socket) => {
     socket.emit('edge-ai/ambulance:ready', {
       path: '/ws/edge-ai/ambulance',
       mode: 'edge-inference-demo',
       supportedEvents: ['analyze-ultrasound', 'monitor-vitals'],
     });
-
     socket.on('analyze-ultrasound', async (payload: any, callback?: (response: any) => void) => {
       try {
         const frames = Array.isArray(payload?.framesBase64)
@@ -72,7 +72,6 @@ export function registerEdgeAIAmbulanceWebSocketSupport(
         });
       }
     });
-
     socket.on(
       'monitor-vitals',
       async (payload: VitalSignStream, callback?: (response: any) => void) => {
@@ -87,51 +86,41 @@ export function registerEdgeAIAmbulanceWebSocketSupport(
       },
     );
   });
-
   app.set('edgeAIAmbulanceIo', io);
   return io;
 }
-
-/**
- * High-frequency AVL position stream for CareDroid Sentinel.
- * Board-level episode/alarm/ETA events remain on emergency SSE; GPS ticks use this path.
- */
-export function registerSentinelAvlWebSocketSupport(
+/**  * High-frequency AVL position stream for CareDroid Sentinel.  * Board-level episode/alarm/ETA events remain on emergency SSE; GPS ticks use this path.  */ export function registerSentinelAvlWebSocketSupport(
   app: Express,
   server: HttpServer,
   corsOrigins: CorsOrigin = false,
+  authMiddleware: SocketAuthMiddleware = denyUnauthenticatedSocket,
 ): Server {
   const io = new Server(server, {
     path: '/ws/sentinel/avl',
     cors: { origin: corsOrigins, credentials: true },
   });
-
+  io.use(authMiddleware);
   io.on('connection', (socket) => {
     socket.emit('sentinel/avl:ready', {
       path: '/ws/sentinel/avl',
       mode: 'sentinel-avl',
       supportedEvents: ['subscribe', 'position', 'unsubscribe'],
     });
-
     socket.on('subscribe', (payload: { room?: string } | undefined) => {
       const room = payload?.room || 'sentinel-avl';
       socket.join(room);
       socket.emit('sentinel/avl:subscribed', { room });
     });
-
     socket.on('unsubscribe', (payload: { room?: string } | undefined) => {
       const room = payload?.room || 'sentinel-avl';
       socket.leave(room);
       socket.emit('sentinel/avl:unsubscribed', { room });
     });
   });
-
   app.set('sentinelAvlIo', io);
   return io;
 }
-
-/** Publish a throttled unit position to Sentinel AVL subscribers. */
-export function publishSentinelAvlPosition(
+/** Publish a throttled unit position to Sentinel AVL subscribers. */ export function publishSentinelAvlPosition(
   app: Express,
   position: {
     unitId: string;
@@ -150,7 +139,6 @@ export function publishSentinelAvlPosition(
     occurredAt: position.occurredAt || new Date().toISOString(),
   });
 }
-
 function emitSocketResult(
   socket: Socket,
   callback: ((response: any) => void) | undefined,

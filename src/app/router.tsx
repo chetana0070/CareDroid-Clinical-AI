@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
-import { MEDICAL_THEME } from '../config/medicalTheme.constants';
 import { lazyWithRetry } from '../utils/lazyWithRetry';
+import './RouteLoadingFallback.css';
 import {
   Navigate,
   Outlet,
@@ -13,6 +13,7 @@ import {
 } from 'react-router-dom';
 import { UserIdentityProvider, useUserIdentity } from '../contexts/UserIdentityContext';
 import ErrorBoundary from '../components/ErrorBoundary';
+import RouteErrorBoundary from '../components/RouteErrorBoundary';
 import PilotExtensionRouteGuard from '../components/PilotExtensionRouteGuard';
 import CareDroidRouteGuard from '../components/auth/CareDroidRouteGuard';
 import EdApplicationEntryRedirect from '../components/EdApplicationEntryRedirect';
@@ -124,19 +125,12 @@ import { shouldRedirectEmergencySurface } from '../services/navigateToEmergencyS
 
 // ── Loading fallback ─────────────────────────────────────────────────────────
 
-function RouteLoadingFallback({ label = 'Loading CareDroid...' }) {
+export function RouteLoadingFallback({ label = 'Loading CareDroid...' }) {
   return (
     <div
       role="status"
       aria-live="polite"
-      style={{
-        padding: 24,
-        minHeight: '40vh',
-        color: MEDICAL_THEME.inkSubtle || '#334155',
-        background: MEDICAL_THEME.surfacePage || '#f8fafc',
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: 16,
-      }}
+      className="route-loading-fallback"
     >
       {label}
     </div>
@@ -465,6 +459,32 @@ function PatientProfileRoute() {
   );
 }
 
+// ── Section error-boundary layouts ───────────────────────────────────────────
+
+function EmergencyModuleBoundary() {
+  return (
+    <RouteErrorBoundary fallbackTitle="Emergency module error">
+      <Outlet />
+    </RouteErrorBoundary>
+  );
+}
+
+function ToolsSectionBoundary() {
+  return (
+    <RouteErrorBoundary fallbackTitle="Tools section error">
+      <Outlet />
+    </RouteErrorBoundary>
+  );
+}
+
+function AdminSectionBoundary() {
+  return (
+    <RouteErrorBoundary fallbackTitle="Admin console error">
+      <Outlet />
+    </RouteErrorBoundary>
+  );
+}
+
 // ── Root layout (AppShell wraps all standard ED routes) ──────────────────────
 
 function RootLayout() {
@@ -563,8 +583,11 @@ export function AppRoutes() {
       {/* ── Main application shell (AppShell) ── */}
       <Route element={<RootLayout />}>
 
-        {renderAdminConsoleRoutes(LazyRoute)}
+        <Route element={<AdminSectionBoundary />}>
+          {renderAdminConsoleRoutes(LazyRoute)}
+        </Route>
 
+        <Route element={<EmergencyModuleBoundary />}>
         {/* ── Emergency department core ── */}
         <Route path="/emergency" element={<EmergencyDefaultRedirect />} />
 
@@ -873,10 +896,12 @@ export function AppRoutes() {
             </CareDroidRouteGuard>
           }
         />
+        </Route>{/* end EmergencyModuleBoundary */}
         {renderProfileConsoleRoutes(LazyRoute)}
         {renderPublicConsoleRoutes(LazyRoute, { insideShellOnly: true })}
 
         {/* ── Developer / tools catalog ── */}
+        <Route element={<ToolsSectionBoundary />}>
         <Route path={CANONICAL_ROUTES.developerCatalog} element={<ToolsRedirect />} />
         <Route path={CANONICAL_ROUTES.saasHealth} element={<LazyRoute label="Loading SaaS health..."><SaasHealthCenter /></LazyRoute>} />
         <Route path="/saas-health/*" element={<LazyRoute label="Loading SaaS health..."><SaasHealthCenter /></LazyRoute>} />
@@ -903,6 +928,8 @@ export function AppRoutes() {
             }
           />
         ))}
+
+        </Route>{/* end ToolsSectionBoundary */}
 
         {renderOperationsFleetConsoleRoutes(LazyRoute)}
         {renderPlatformConsoleRoutes(LazyRoute)}
@@ -957,6 +984,7 @@ export function AppRoutes() {
       ))}
 
       {/* ── Generic fallbacks ── */}
+      <Route path="/dashboard"          element={<EmergencyDefaultRedirect />} />
       <Route path="/home"               element={<EmergencyDefaultRedirect />} />
       <Route path="/app"                element={<EmergencyDefaultRedirect />} />
       <Route path="/mobile"             element={<EmergencyDefaultRedirect />} />

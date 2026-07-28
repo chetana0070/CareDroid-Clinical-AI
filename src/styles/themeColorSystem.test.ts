@@ -28,7 +28,6 @@ const badgeCss = readFileSync(join(srcRoot, 'components/ui/Badge.css'), 'utf8');
 const alertCss = readFileSync(join(srcRoot, 'components/ui/Alert.css'), 'utf8');
 const platformEntryCss = readFileSync(join(srcRoot, 'pages/PlatformEntryHub.css'), 'utf8');
 const settingsCss = readFileSync(join(srcRoot, 'pages/Settings.css'), 'utf8');
-const featureMgmtCss = readFileSync(join(srcRoot, 'pages/settings/FeatureManagement.css'), 'utf8');
 const teamMgmtCss = readFileSync(join(srcRoot, 'pages/team/TeamManagement.css'), 'utf8');
 const notificationCss = readFileSync(join(srcRoot, 'components/notifications/NotificationToast.css'), 'utf8');
 const toolPreflightCss = readFileSync(join(srcRoot, 'components/clinical/ToolPreflightStatus.css'), 'utf8');
@@ -38,9 +37,14 @@ const LEGACY_NEON_PATTERN =
 
 describe('theme color system revamp', () => {
   it('defines the standard medical root palette on every color layer', () => {
-    expect(themeTokensCss).toMatch(/html,\s*html\[data-theme='light'\][\s\S]*--app-bg:\s*#f8fafc/);
-    expect(themeTokensCss).toMatch(/html,\s*html\[data-theme='light'\][\s\S]*--app-surface-1:\s*#ffffff/);
-    expect(themeTokensCss).not.toMatch(/html\[data-theme='dark'\]/);
+    // --app-* light-theme tokens now resolve through --medical-* (see file's
+    // own header comment: "Color alignment") rather than repeating literal
+    // hex values -- the fallback values below are still the source of truth.
+    expect(themeTokensCss).toMatch(/html,\s*html\[data-theme='light'\][\s\S]*--app-bg:\s*var\(--medical-canvas,\s*#f6f9fc\)/);
+    expect(themeTokensCss).toMatch(/html,\s*html\[data-theme='light'\][\s\S]*--app-surface-1:\s*var\(--medical-white,\s*#ffffff\)/);
+    // Dark mode is now a real, shipped feature (ThemeToggle + persisted
+    // preference) -- see medicalThemeAudit.test.ts for the dark-block audit.
+    expect(themeTokensCss).toMatch(/html\[data-theme='dark'\]\s*\{/);
   });
 
   it('normalizes legacy aliases through the medical color layer', () => {
@@ -68,10 +72,10 @@ describe('theme color system revamp', () => {
     expect(cardCss).toContain('var(--app-text-primary)');
   });
 
-  it('uses sky blue as the medical product accent across the standard theme', () => {
-    expect(themeTokensCss).toMatch(/html,\s*html\[data-theme='light'\][\s\S]*--app-accent:\s*#0ea5e9/);
-    expect(themeTokensCss).toMatch(/html,\s*html\[data-theme='light'\][\s\S]*--app-accent-interactive:\s*#0ea5e9/);
-    expect(themeTokensCss).toMatch(/html,\s*html\[data-theme='light'\][\s\S]*--app-link-fg:\s*#0369a1/);
+  it('uses the CCDS Primary Clinical Blue as the medical product accent across the standard theme', () => {
+    expect(themeTokensCss).toMatch(/html,\s*html\[data-theme='light'\][\s\S]*--app-accent:\s*var\(--medical-accent,\s*#075985\)/);
+    expect(themeTokensCss).toMatch(/html,\s*html\[data-theme='light'\][\s\S]*--app-accent-interactive:\s*var\(--medical-accent,\s*#075985\)/);
+    expect(themeTokensCss).toMatch(/html,\s*html\[data-theme='light'\][\s\S]*--app-link-fg:\s*var\(--medical-accent-hover,\s*#054364\)/);
     expect(medicalTypeLayerCss).toContain('--medical-text-link: var(--medical-sky-700)');
   });
 
@@ -149,7 +153,6 @@ describe('theme color system revamp', () => {
     const migratedCss = [
       platformEntryCss,
       settingsCss,
-      featureMgmtCss,
       teamMgmtCss,
       notificationCss,
       toolPreflightCss,

@@ -9,6 +9,7 @@ import {
 import { isBackendCapabilityEnabled } from '../config/backendApiCapabilities';
 import OcrIntakeApi, { type OcrJobStatus } from './ocrIntakeApi';
 import analyticsService from './analyticsService';
+import logger from '../utils/logger';
 import {
   inferTextHintsFromFilename,
   mergeDemographics,
@@ -175,7 +176,12 @@ async function tryBackendOcrJob(params: {
     }
 
     if (job.status === 'completed' && job.extractedFields.length > 0) {
-      void OcrIntakeApi.applyToIntake(job.id, params.staff).catch(() => undefined);
+      void OcrIntakeApi.applyToIntake(job.id, params.staff).catch((error) => {
+        logger.warn('Failed to apply OCR intake job to intake session', {
+          jobId: job.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      });
     }
 
     analyticsService.trackEvent({
@@ -352,10 +358,10 @@ export async function captureIntakeArtifact({
   });
 
   const auditNote = ocrFailed
-    ? `${artifact.label}: document processing failed for "${file.name}" — continue with manual verification.`
+    ? `${artifact.label}: document processing failed for "${file.name}" ΓÇö continue with manual verification.`
     : fieldCount > 0
-      ? `${artifact.label}: captured ${fieldCount} field${fieldCount === 1 ? '' : 's'} from "${file.name}" — staff review required.`
-      : `${artifact.label}: document "${file.name}" stored — no structured fields detected; continue manual verification.`;
+      ? `${artifact.label}: captured ${fieldCount} field${fieldCount === 1 ? '' : 's'} from "${file.name}" ΓÇö staff review required.`
+      : `${artifact.label}: document "${file.name}" stored ΓÇö no structured fields detected; continue manual verification.`;
 
   return {
     artifactId: resolvedArtifactId,

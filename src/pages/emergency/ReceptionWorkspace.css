@@ -1,18 +1,22 @@
 .reception-command {
-  --reception-command-bg: var(--medical-surface-page, #f8fafc);
-  --reception-command-panel: var(--medical-white, #ffffff);
-  --reception-command-inset: var(--medical-slate-100, #f1f5f9);
-  --reception-command-border: var(--medical-border, #e2e8f0);
-  --reception-command-ink: var(--medical-ink, #111827);
-  --reception-command-muted: var(--medical-ink-muted, #64748b);
-  --reception-command-primary: var(--medical-accent-hover, #0284c7);
-  --reception-command-primary-strong: var(--medical-accent-tint, rgba(14, 165, 233, 0.1));
-  --reception-command-critical: var(--semantic-critical, #b91c1c);
-  --reception-command-warning: var(--semantic-attention, #b45309);
+  --reception-command-bg: var(--cdl-surface-page, var(--app-surface-0));
+  --reception-command-panel: var(--cdl-surface-card, var(--app-surface-1));
+  --reception-command-inset: var(--cdl-surface-muted, var(--app-surface-muted));
+  --reception-command-border: var(--cdl-border, var(--app-border-subtle));
+  --reception-command-ink: var(--cdl-ink, var(--app-text-primary));
+  --reception-command-muted: var(--cdl-ink-muted, var(--app-text-secondary));
+  --reception-command-primary: var(--cdl-brand-600, #0284c7);
+  --reception-command-primary-strong: var(--cdl-brand-700, #0369a1);
+  --reception-command-critical: var(--cdl-critical, var(--app-danger));
+  --reception-command-warning: var(--cdl-warning, var(--app-warning));
   display: grid;
   gap: var(--cdl-panel-gap, var(--app-layout-panel-gap, 12px));
-  padding: 4px 0 72px;
+  padding: 0;
   color: var(--reception-command-ink);
+}
+
+.reception-workspace {
+  background: var(--app-bg);
 }
 
 .reception-command button,
@@ -26,8 +30,12 @@
 .reception-command input:focus-visible,
 .reception-command select:focus-visible,
 .reception-command textarea:focus-visible {
-  outline: 3px solid rgba(15, 118, 110, 0.24);
+  outline: 3px solid rgba(15, 23, 42, 0.24);
   outline-offset: 2px;
+}
+
+.reception-front-door__escalation-quick-actions {
+  margin-top: var(--cdl-panel-gap, var(--app-layout-panel-gap, 12px));
 }
 
 .reception-command-header {
@@ -39,6 +47,7 @@
   border: 1px solid var(--reception-command-border);
   border-radius: 8px;
   background: var(--reception-command-panel);
+  box-shadow: var(--app-elevation-card);
 }
 
 .reception-command-header h1 {
@@ -86,8 +95,8 @@
 }
 
 .reception-command-chip--critical {
-  border-color: rgba(185, 28, 28, 0.35);
-  background: #fff1f2;
+  border-color: color-mix(in srgb, var(--reception-command-critical) 35%, transparent);
+  background: color-mix(in srgb, var(--reception-command-critical) 8%, var(--reception-command-panel));
   color: var(--reception-command-critical);
 }
 
@@ -148,15 +157,15 @@
 }
 
 .reception-command-stepper__item--complete {
-  border-color: rgba(15, 118, 110, 0.35);
-  background: #ecfdf5;
+  border-color: color-mix(in srgb, var(--reception-command-primary) 50%, var(--reception-command-border));
+  background: var(--reception-command-panel);
   color: var(--reception-command-primary-strong);
 }
 
 .reception-command-stepper__item--critical {
   grid-column: 1 / -1;
-  border-color: rgba(185, 28, 28, 0.35);
-  background: #fff1f2;
+  border-color: color-mix(in srgb, var(--reception-command-critical) 35%, transparent);
+  background: color-mix(in srgb, var(--reception-command-critical) 8%, var(--reception-command-panel));
   color: var(--reception-command-critical);
 }
 
@@ -180,15 +189,16 @@
 }
 
 .reception-command-missing {
-  border-color: rgba(180, 83, 9, 0.34);
-  background: #fffbeb;
+  border-color: color-mix(in srgb, var(--reception-command-warning) 34%, transparent);
+  background: color-mix(in srgb, var(--reception-command-warning) 8%, var(--reception-command-panel));
   color: var(--reception-command-warning);
 }
 
 .reception-command-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
   gap: 14px;
+  width: 100%;
 }
 
 .reception-command-panel {
@@ -227,6 +237,7 @@
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
+  max-width: 900px;
 }
 
 .reception-command-segmented button,
@@ -248,15 +259,16 @@
 }
 
 .reception-command-segmented button.is-active {
-  border-color: rgba(15, 118, 110, 0.45);
-  background: #ccfbf1;
-  color: #134e4a;
+  border-color: color-mix(in srgb, var(--reception-command-primary) 50%, var(--reception-command-border));
+  background: var(--reception-command-panel);
+  color: var(--reception-command-primary-strong);
 }
 
 .reception-command-form-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
+  max-width: 900px;
 }
 
 .reception-command-form-grid--admin {
@@ -288,7 +300,7 @@
   min-height: 42px;
   border: 1px solid var(--reception-command-border);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--app-input-bg);
   color: var(--reception-command-ink);
   padding: 9px 10px;
 }
@@ -343,17 +355,17 @@
   min-height: 50px;
   border-radius: 8px;
   padding: 10px 12px;
-  background: #ecfdf5;
+  background: color-mix(in srgb, var(--app-success) 10%, var(--reception-command-panel));
   color: var(--reception-command-primary-strong);
 }
 
 .reception-command-ai__urgency--critical {
-  background: #fff1f2;
+  background: color-mix(in srgb, var(--reception-command-critical) 10%, var(--reception-command-panel));
   color: var(--reception-command-critical);
 }
 
 .reception-command-ai__urgency--high {
-  background: #fffbeb;
+  background: color-mix(in srgb, var(--reception-command-warning) 10%, var(--reception-command-panel));
   color: var(--reception-command-warning);
 }
 
@@ -400,6 +412,41 @@
   font-weight: 700;
 }
 
+.reception-command-copilot-outstanding {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+  border: 1px solid var(--reception-command-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--reception-command-inset);
+}
+
+.reception-command-copilot-outstanding__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--reception-command-muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.reception-command-copilot-outstanding ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+
+.reception-command-copilot-outstanding p {
+  margin: 0;
+  color: var(--reception-command-muted);
+  font-size: 13px;
+}
+
 .reception-command-empty {
   display: flex;
   align-items: center;
@@ -421,9 +468,10 @@
   gap: 8px;
   align-items: center;
   min-height: 58px;
+  max-width: 900px;
   border: 1px solid var(--reception-command-border);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--reception-command-panel);
   color: var(--reception-command-ink);
   padding: 9px 10px;
   cursor: pointer;
@@ -431,8 +479,8 @@
 }
 
 .reception-command-queue-row--risk {
-  border-color: rgba(185, 28, 28, 0.32);
-  background: #fff7f7;
+  border-color: color-mix(in srgb, var(--reception-command-critical) 32%, transparent);
+  background: color-mix(in srgb, var(--reception-command-critical) 5%, var(--reception-command-panel));
 }
 
 .reception-command-queue-row strong,
@@ -483,9 +531,9 @@
   gap: 12px;
   align-items: center;
   min-height: 78px;
-  border: 1px solid rgba(185, 28, 28, 0.32);
+  border: 1px solid color-mix(in srgb, var(--reception-command-critical) 32%, transparent);
   border-radius: 8px;
-  background: #fff7f7;
+  background: color-mix(in srgb, var(--reception-command-critical) 5%, var(--reception-command-panel));
   padding: 10px;
 }
 
@@ -511,7 +559,7 @@
   min-width: 72px;
   min-height: 58px;
   border-radius: 8px;
-  background: #fee2e2;
+  background: color-mix(in srgb, var(--reception-command-critical) 15%, var(--reception-command-panel));
   color: var(--reception-command-critical);
   font-weight: 900;
 }
@@ -540,32 +588,32 @@
   bottom: 92px;
   z-index: 20;
   max-width: min(420px, calc(100vw - 36px));
-  border-color: rgba(15, 118, 110, 0.35);
-  background: #ecfdf5;
+  border-color: color-mix(in srgb, var(--app-success) 35%, transparent);
+  background: color-mix(in srgb, var(--app-success) 10%, var(--reception-command-panel));
   color: var(--reception-command-primary-strong);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+  box-shadow: var(--app-shadow-2);
 }
 
 .reception-command-toast--error {
-  border-color: rgba(185, 28, 28, 0.35);
-  background: #fff1f2;
+  border-color: color-mix(in srgb, var(--reception-command-critical) 35%, transparent);
+  background: color-mix(in srgb, var(--reception-command-critical) 10%, var(--reception-command-panel));
   color: var(--reception-command-critical);
 }
 
 .reception-command-actionbar {
-  position: fixed;
-  left: var(--app-shell-sidebar-offset, 0);
-  right: 0;
+  position: sticky;
   bottom: 0;
-  z-index: 15;
+  left: 0;
+  right: 0;
+  z-index: 2;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  min-height: 72px;
+  min-height: 60px;
   border-top: 1px solid var(--reception-command-border);
-  background: rgba(255, 255, 255, 0.96);
-  padding: 12px 18px;
-  backdrop-filter: blur(8px);
+  background: var(--app-surface-glass, rgba(255, 255, 255, 0.95));
+  padding: 10px 16px;
+  backdrop-filter: blur(var(--app-blur-glass, 8px));
 }
 
 .reception-command-actionbar button {
@@ -576,17 +624,17 @@
 .reception-command-actionbar__primary {
   border-color: var(--reception-command-primary-strong) !important;
   background: var(--reception-command-primary) !important;
-  color: #ffffff !important;
+  color: var(--app-on-solid) !important;
 }
 
 .reception-command-actionbar__critical {
   border-color: var(--reception-command-critical) !important;
   background: var(--reception-command-critical) !important;
-  color: #ffffff !important;
+  color: var(--app-on-solid) !important;
 }
 
 .reception-command-actionbar__secondary {
-  background: #ffffff !important;
+  background: var(--reception-command-panel) !important;
 }
 
 .reception-command-actionbar button:disabled {
@@ -599,6 +647,12 @@
   .reception-command-form-grid,
   .reception-command-segmented {
     grid-template-columns: 1fr 1fr;
+    max-width: none;
+  }
+
+  .reception-front-door__body {
+    grid-template-columns: 1fr;
+    max-width: none;
   }
 
   .reception-command-panel--intake {
@@ -624,6 +678,12 @@
   .reception-command-red-flags > div,
   .reception-command-stepper {
     grid-template-columns: 1fr;
+    max-width: none;
+  }
+
+  .reception-command-queue-row {
+    grid-template-columns: 1fr;
+    max-width: none;
   }
 
   .reception-command-actionbar {
@@ -634,10 +694,6 @@
   .reception-command-actionbar button {
     width: 100%;
     min-width: 0;
-  }
-
-  .reception-command-queue-row {
-    grid-template-columns: 1fr;
   }
 
   .reception-command-alert {
@@ -719,15 +775,11 @@
 
 .reception-command-selected--floating {
   align-items: center;
-  bottom: 84px;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   justify-content: space-between;
-  left: calc(var(--app-shell-sidebar-offset, 0) + 18px);
-  position: fixed;
-  right: 18px;
-  z-index: 16;
+  z-index: 2;
 }
 
 .reception-front-door__description {
@@ -742,6 +794,7 @@
   display: grid;
   gap: var(--cdl-panel-gap, 12px);
   grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  width: 100%;
 }
 
 .reception-front-door__main {
@@ -767,13 +820,148 @@
   margin: 0 0 8px;
 }
 
-.reception-operational-rail__queue .reception-command-queue-row {
-  grid-template-columns: 1fr auto;
+.reception-operational-rail__queue .reception-command-queue-row,
+.reception-operational-rail__queue .reception-queue-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: stretch;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.reception-queue-row__select {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 4px;
+  align-items: start;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.reception-queue-row__who {
+  min-width: 0;
+}
+
+.reception-queue-row__who strong,
+.reception-queue-row__who small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reception-queue-row__who small {
+  color: var(--cdl-ink-muted, var(--reception-command-muted));
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.reception-queue-row__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.reception-queue-row__chip {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  min-height: 20px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  background: var(--cdl-surface-muted, #f1f5f9);
+  border: 1px solid var(--cdl-border, #e2e8f0);
+  color: var(--cdl-ink-muted, #334155);
+}
+
+.reception-queue-row__chip--critical {
+  background: var(--cdl-critical-bg) !important;
+  border-color: var(--cdl-critical-border) !important;
+  color: var(--cdl-critical-text) !important;
+}
+
+.reception-queue-row__chip--warning {
+  background: var(--cdl-warning-bg) !important;
+  border-color: var(--cdl-warning-border) !important;
+  color: var(--cdl-warning-text) !important;
+}
+
+.reception-queue-row__status,
+.reception-queue-row__wait {
+  color: var(--cdl-ink-muted, var(--reception-command-muted));
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.reception-queue-row__status {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reception-queue-row__wait {
+  justify-self: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.reception-queue-row__cta {
+  align-self: stretch;
+  min-width: 76px;
+  margin: 6px 6px 6px 0;
+  padding: 0 8px;
+  border: 1px solid var(--cdl-border, #e2e8f0);
+  border-radius: 8px;
+  background: var(--cdl-surface-muted, #f1f5f9);
+  color: var(--cdl-ink, #0f172a);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.reception-queue-row__cta--critical {
+  background: var(--cdl-critical-bg);
+  border-color: var(--cdl-critical-border);
+  color: var(--cdl-critical-text);
+}
+
+.reception-queue-row__cta:hover {
+  filter: brightness(0.98);
+}
+
+.reception-queue-row--warning {
+  border-color: var(--cdl-warning-border, #fbbf24);
+  background: color-mix(in srgb, var(--cdl-warning, #b45309) 6%, var(--cdl-surface-card, #fff));
 }
 
 .reception-command-queue-row--selected {
-  border-color: color-mix(in srgb, var(--reception-command-primary) 42%, var(--reception-command-border));
-  background: color-mix(in srgb, var(--reception-command-primary) 8%, #ffffff);
+  border-color: color-mix(in srgb, var(--cdl-brand-500, #0ea5e9) 42%, var(--cdl-border, #e2e8f0));
+  background: color-mix(in srgb, var(--cdl-brand-500, #0ea5e9) 8%, var(--cdl-surface-card, #ffffff));
+}
+
+.reception-assist-toggle {
+  width: 100%;
+  min-height: 36px;
+  border: 1px dashed var(--cdl-border-strong, #cbd5e1);
+  border-radius: 8px;
+  background: var(--cdl-surface-muted, #f1f5f9);
+  color: var(--cdl-ink-muted, #334155);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .reception-quick-complaints {
@@ -810,4 +998,239 @@
   .reception-operational-rail {
     position: static;
   }
+}
+
+/* Reception profile layout -------------------------------------------------
+   Use the available desk canvas, but let cards—not decorative color—create
+   hierarchy. The operational rail becomes a real companion column on wide
+   screens and folds back into the document flow at smaller sizes. */
+.reception-front-door {
+  width: 100%;
+  max-width: none;
+}
+
+.reception-front-door > .emergency-route-page__content > .cdl-operational-page {
+  width: 100%;
+  min-width: 0;
+}
+
+.reception-front-door
+  > .emergency-route-page__content
+  > .cdl-operational-page
+  > [data-cdl-zone='primary-actions'] {
+  grid-auto-flow: row;
+  justify-content: stretch;
+  width: 100%;
+}
+
+.reception-command-stepper-shell__graphic {
+  display: none;
+}
+
+/* ── Standard desktop (1280–2559px): 2-column ── */
+@media (min-width: 1280px) and (max-width: 2559px) {
+  .reception-front-door > .emergency-route-page__content > .cdl-operational-page {
+    grid-template-columns: minmax(0, 1fr) minmax(310px, 360px);
+    align-items: start;
+  }
+
+  .reception-front-door
+    > .emergency-route-page__content
+    > .cdl-operational-page
+    > [data-cdl-zone='operational-summary'],
+  .reception-front-door
+    > .emergency-route-page__content
+    > .cdl-operational-page
+    > [data-cdl-zone='primary-actions'] {
+    grid-column: 1 / -1;
+  }
+
+  .reception-front-door
+    > .emergency-route-page__content
+    > .cdl-operational-page
+    > [data-cdl-zone='active-work'] {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .reception-front-door
+    > .emergency-route-page__content
+    > .cdl-operational-page
+    > [data-cdl-zone='supporting-context'] {
+    grid-column: 2;
+    grid-row: 3;
+    position: sticky;
+    top: 12px;
+    align-self: start;
+  }
+}
+
+/* ── Ultrawide (2560px+): 3-column handled by clinical-ultrawide-layer.css ──
+   The ultrawide layer sets grid-template-columns with capped rail width.
+   We only need to ensure the rail doesn't get too wide internally. */
+@media (min-width: 2560px) {
+  .reception-front-door
+    > .emergency-route-page__content
+    > .cdl-operational-page
+    > [data-cdl-zone='primary-actions'] {
+    grid-column: 1 / -1;
+  }
+
+  .reception-operational-rail {
+    max-width: var(--cd-uw-rail-max, 380px);
+  }
+}
+
+/* ── Tablet (760–1279px): stacked with 2-col rail ── */
+@media (min-width: 760px) and (max-width: 1279px) {
+  .reception-operational-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    position: static;
+  }
+}
+
+/* ── Small tablet / large phone (≤760px): single column ── */
+@media (max-width: 760px) {
+  .reception-command-stepper {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .reception-command-stepper__item--critical {
+    grid-column: 1 / -1;
+  }
+
+  .unified-intake-actionbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 8px max(10px, env(safe-area-inset-right))
+      calc(8px + env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
+  }
+
+  .unified-intake-actionbar
+    :is(.reception-command-actionbar__primary, .reception-command-actionbar__critical) {
+    grid-column: 1 / -1;
+    order: -1;
+  }
+}
+
+/* ── Narrow phone (≤430px) ── */
+@media (max-width: 430px) {
+  .reception-command-stepper,
+  .unified-intake-actionbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── Patient Detail Flyout ── */
+.reception-patient-detail-flyout {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: min(380px, 90vw);
+  z-index: 30;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: var(--reception-command-panel);
+  border-left: 1px solid var(--reception-command-border);
+  box-shadow: var(--app-shadow-2);
+  animation: reception-flyout-slide-in 0.18s ease-out;
+}
+
+@keyframes reception-flyout-slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.reception-patient-detail-flyout__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  border-bottom: 1px solid var(--reception-command-border);
+  padding: 10px 14px;
+}
+
+.reception-patient-detail-flyout__header strong {
+  font-size: 15px;
+}
+
+.reception-patient-detail-flyout__mrn {
+  color: var(--reception-command-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.reception-patient-detail-flyout__close {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--reception-command-border);
+  border-radius: 6px;
+  background: var(--reception-command-inset);
+  color: var(--reception-command-muted);
+  cursor: pointer;
+}
+
+.reception-patient-detail-flyout__close:hover {
+  background: var(--reception-command-border);
+  color: var(--reception-command-ink);
+}
+
+.reception-patient-detail-flyout__body {
+  overflow-y: auto;
+  padding: 14px;
+}
+
+.reception-patient-detail-flyout__body dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 12px;
+  margin: 0;
+}
+
+.reception-patient-detail-flyout__body dt {
+  color: var(--reception-command-muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.reception-patient-detail-flyout__body dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.reception-patient-detail-flyout__footer {
+  border-top: 1px solid var(--reception-command-border);
+  padding: 10px 14px;
+}
+
+.reception-patient-detail-flyout__footer button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  border: 1px solid var(--reception-command-border);
+  border-radius: 8px;
+  background: var(--reception-command-inset);
+  color: var(--reception-command-ink);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0 12px;
+}
+
+.reception-patient-detail-flyout__footer button:hover {
+  background: var(--reception-command-border);
+}
+
+.reception-interactive-ai {
+  margin-top: 0.75rem;
 }

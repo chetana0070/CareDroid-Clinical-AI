@@ -15,6 +15,42 @@ describe('backendApiCapabilities', () => {
       'sofa-calculator',
       'drug-interactions',
       'lab-interpreter',
+      'heart-score',
+      'cha2ds2vasc-calculator',
+      'wells-pe',
+      'shock-index',
+      'apache2-calculator',
+      'anion-gap',
+      'aa-gradient',
+      'news2',
+      'abcd2',
+      'canadian-c-spine',
+      'nexus-cspine',
+      'gcs-calculator',
+      'chads2',
+      'duke-treadmill-score',
+      'reynolds-risk-score',
+      'has-bled',
+      'timi-ua-nstemi',
+      'framingham-risk',
+      'grace-acs',
+      'corrected-calcium',
+      'corrected-sodium',
+      'fena',
+      'feurea',
+      'osmolal-gap',
+      'serum-osmolality',
+      'pao2-fio2-ratio',
+      'rox-index',
+      'mews',
+      'revised-trauma-score',
+      'hunt-hess-scale',
+      'ich-score',
+      'four-score',
+      'modified-rankin-scale',
+      'pecarn-head',
+      'wells-dvt-calculator',
+      'abg-interpreter',
     ]);
     expect(isBackendExecutorToolId('qsofa')).toBe(false);
     expect(isBackendExecutorToolId('drug-interactions')).toBe(true);
@@ -58,12 +94,21 @@ describe('backendApiCapabilities', () => {
     expect(isBackendCapabilityEnabled('emergencyIntegrationHub')).toBe(true);
     expect(isBackendCapabilityEnabled('emergencyProvincialHealth')).toBe(true);
     expect(isBackendCapabilityEnabled('emergencySmartIntake')).toBe(true);
+    expect(isBackendCapabilityEnabled('emergencyPatients')).toBe(true);
+    expect(isBackendCapabilityEnabled('emergencyReceptionSnapshot')).toBe(true);
     expect(getBackendCapabilityStatus('emergencyCentralNode')).toBe(BACKEND_CAPABILITY_STATUS.DEMO);
     expect(getBackendCapabilityStatus('emergencyPatientJourney')).toBe(BACKEND_CAPABILITY_STATUS.DEMO);
     expect(getBackendCapabilityStatus('emergencyQueues')).toBe(BACKEND_CAPABILITY_STATUS.DEMO);
     expect(getBackendCapabilityStatus('emergencyCapacity')).toBe(BACKEND_CAPABILITY_STATUS.DEMO);
     expect(getBackendCapabilityStatus('emergencyIntegrationHub')).toBe(BACKEND_CAPABILITY_STATUS.DEMO);
-    expect(getBackendCapabilityStatus('emergencySmartIntake')).toBe(BACKEND_CAPABILITY_STATUS.DEMO);
+    // Create/list/handoff intake path is a real session board mutator (not fixture-only demo).
+    expect(getBackendCapabilityStatus('emergencySmartIntake')).toBe(BACKEND_CAPABILITY_STATUS.REAL);
+    expect(getBackendCapabilityStatus('emergencyPatients')).toBe(BACKEND_CAPABILITY_STATUS.REAL);
+    expect(getBackendCapabilityStatus('emergencyReceptionSnapshot')).toBe(BACKEND_CAPABILITY_STATUS.REAL);
+    expect(getBackendCapabilityStatus('emergencyReceptionHandoff')).toBe(BACKEND_CAPABILITY_STATUS.REAL);
+    expect(getBackendCapabilityStatus('emergencyReceptionEscalation')).toBe(BACKEND_CAPABILITY_STATUS.REAL);
+    expect(isBackendCapabilityEnabled('emergencyReceptionEscalation')).toBe(true);
+    expect(getBackendCapabilityStatus('emergencyOcrIntake')).toBe(BACKEND_CAPABILITY_STATUS.REAL);
   });
 
   it('enables read-only live tracking contracts as demo-backed capabilities', () => {

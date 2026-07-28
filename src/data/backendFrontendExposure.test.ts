@@ -45,10 +45,9 @@ describe('backendFrontendExposure scan', () => {
     expect(ok).toBe(true);
   });
 
-  scanIt('inventory covers three POST executors', () => {
+  scanIt('inventory covers every registered POST executor', () => {
     const scan = runBackendFrontendExposureScan();
     expect(scan.executorNluIds).toEqual([...BACKEND_EXECUTOR_NLU_TOOL_IDS]);
-    expect(scan.executorNluIds).toHaveLength(3);
 
     for (const id of BACKEND_EXECUTOR_NLU_TOOL_IDS) {
       expect(findBackendRoute('POST', `/api/tools/${id}/execute`)).toBeTruthy();
@@ -273,7 +272,8 @@ describe('Vite proxy and ports', () => {
     const vite = readViteDevConfig();
     expect(vite.devPort).toBe(5190);
     expect(vite.previewPort).toBe(5190);
-    expect(vite.proxyTarget).toBe('http://localhost:3350');
+    // Prefers 127.0.0.1 over localhost (Windows IPv6 ECONNREFUSED fix).
+    expect(vite.proxyTarget).toBe('http://127.0.0.1:3350');
     expect(vite.proxiesApi).toBe(true);
     expect(vite.proxiesHealth).toBe(true);
     expect(vite.proxiesSocketIo).toBe(true);

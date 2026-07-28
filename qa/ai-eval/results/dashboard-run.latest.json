@@ -1,5 +1,5 @@
 {
-  "id": "10c050025830",
+  "id": "18045c288b9a",
   "modelName": "offline-fixture-harness",
   "promptName": "n/a-fixture",
   "agentName": "ai-eval-run-v1",
@@ -18,7 +18,7 @@
     "userSatisfaction": null,
     "costUsd": 0
   },
-  "evaluatedAt": "2026-07-11T21:43:41.995Z",
+  "evaluatedAt": "2026-07-21T03:37:48.478Z",
   "notes": "Measured offline fixtures — not seeded DEFAULT_METRICS",
   "source": "qa/ai-eval/results/latest.json"
 }

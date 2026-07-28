@@ -4,7 +4,7 @@
   padding: 14px;
   border: 1px solid var(--color-border-subtle, var(--medical-border, #e0f2fe));
   border-radius: 12px;
-  background: var(--color-elevated, var(--medical-surface-page, #f0f9ff));
+  background: var(--color-elevated, var(--medical-surface-page, #f1f5f9));
 }
 
 .reassessment-timer-panel__header {
@@ -16,7 +16,7 @@
 
 .reassessment-timer-panel__eyebrow {
   margin: 0;
-  color: var(--status-info, #38bdf8);
+  color: var(--status-info, #94a3b8);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -138,18 +138,21 @@
   min-height: 22px;
   padding: 0 8px;
   border-radius: 999px;
+  border: 1px solid var(--cdl-border, #e2e8f0);
   font-size: 10px;
   font-weight: 700;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--color-text-primary, var(--medical-ink, #111827));
+  background: var(--cdl-surface-muted, #f1f5f9);
+  color: var(--cdl-ink, var(--medical-ink, #0f172a));
 }
 
 .reassessment-timer-badge[data-tone='watch'] {
-  background: rgba(245, 158, 11, 0.16);
-  color: var(--medical-status-warning-text, #b45309);
+  background: var(--cdl-warning-bg, rgba(245, 158, 11, 0.14));
+  border-color: var(--cdl-warning-border, #fbbf24);
+  color: var(--cdl-warning-text, #92400e);
 }
 
 .reassessment-timer-badge[data-tone='critical'] {
-  background: rgba(239, 68, 68, 0.16);
-  color: var(--medical-status-critical-text, #b91c1c);
+  background: var(--cdl-critical-bg, rgba(220, 38, 38, 0.12));
+  border-color: var(--cdl-critical-border, #fca5a5);
+  color: var(--cdl-critical-text, #991b1b);
 }

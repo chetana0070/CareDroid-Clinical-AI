@@ -548,6 +548,12 @@ export default function SmartIntake({
           isAiDerived: false,
         }).catch(() => undefined);
       }
+      if (routeResult.backendSyncStatus === 'failed') {
+        setOcrUploadStatus(
+          routeResult.backendSyncError ||
+            'Patient created locally. Backend sync is pending — retry when connectivity returns.',
+        );
+      }
       finishIntakeNavigation(routeResult.patientId);
       return routeResult.patient;
     } catch {
@@ -912,7 +918,13 @@ export default function SmartIntake({
             () =>
               isBackendCapabilityEnabled('emergencySmartIntakeIdentitySession')
                 ? SmartIntakeApi.createPatient(sessionId, emergencyRole.roleLabel)
-                : runSmartIntakeVerticalSlice({ patient, staffId: 'smart-intake-rn' }),
+                : runSmartIntakeVerticalSlice({
+                    patient,
+                    staffId: 'smart-intake-rn',
+                    // Staff already reviewed matchCandidates and explicitly chose
+                    // "Create patient" over "Link patient" above.
+                    confirmDuplicateOverride: true,
+                  }),
             (result) =>
               result
                 ? hydrateSmartIntakeResult(result, patient)

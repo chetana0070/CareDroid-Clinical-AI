@@ -132,6 +132,7 @@ export class ChatService {
     clientWorkspaceContext?: Record<string, any>,
     clientMemoryContext?: Record<string, any>,
     requestMessages?: Array<{ role: string; content: string }>,
+    organizationId?: string,
   ): Promise<QueryResponse> {
     this.logger.log(`💬 Processing chat message: "${message}"`);
     const startedAt = Date.now();
@@ -214,6 +215,7 @@ export class ChatService {
             artifactRouteConfidence: classification.artifactRouteConfidence,
             confidence: classification.confidence,
             method: classification.method,
+            nodeId: classification.nodeId,
             isEmergency: classification.isEmergency,
           },
           ipAddress: '0.0.0.0',
@@ -228,6 +230,10 @@ export class ChatService {
     }
 
     classification = this.mergeUiToolRegistryHint(tool, classification);
+    // Bind IntentClassifier → Unified AI Node onto the gateway envelope for MoE + audit.
+    // Reassign so all later compose/finalize/audit paths carry nodeId + artifactType.
+    const boundEnvelope = this.aiGateway.attachUnifiedNode(aiRunEnvelope, classification);
+    Object.assign(aiRunEnvelope, boundEnvelope);
     const routePlan = this.aiRoutingEngine.createRoutePlan(aiRunEnvelope, classification);
     const contextPacket = this.aiContextManager.buildContextPacket(aiRunEnvelope, routePlan);
     const costOptimization = this.routingOptimizer.optimizeRequest({
@@ -241,6 +247,7 @@ export class ChatService {
       metadata: {
         selectedExpert: routePlan.selectedExpert,
         primaryIntent: routePlan.primaryIntent,
+        unifiedNode: aiRunEnvelope.unifiedNode,
       },
     });
     const memoryContext = {
@@ -254,6 +261,7 @@ export class ChatService {
       memoryContext,
       knowledgeBaseContext,
       workspaceContext,
+      unifiedNode: aiRunEnvelope.unifiedNode,
     };
     const integrationMetadata = {
       costOptimization,
@@ -261,6 +269,7 @@ export class ChatService {
       knowledgeBaseContext,
       workspaceContext,
       platformGovernance: governanceDecision,
+      unifiedNode: aiRunEnvelope.unifiedNode,
     };
     await this.aiGateway.logRoutingAudit({
       envelope: aiRunEnvelope,
@@ -432,6 +441,7 @@ export class ChatService {
         classification,
         userId,
         modelFoundationContext,
+        organizationId,
       );
       const composed = this.aiResponseComposer.compose(
         response,
@@ -467,6 +477,7 @@ export class ChatService {
           ragContext = await this.ragService.retrieve(message, {
             topK: 3,
             minScore: 0.7,
+            organizationId,
           });
         } else {
           ragContext = this.emptyRagContext(message, 'rag_disabled');
@@ -677,7 +688,10 @@ export class ChatService {
     }
     try {
       this.toolOrchestrator.getToolMetadata(targetId);
-    } catch {
+    } catch (error) {
+      this.logger.warn(
+        `[ChatService] Tool metadata lookup failed for ${targetId}: ${error instanceof Error ? error.message : String(error)}`,
+      );
       return classification;
     }
     return {
@@ -1344,7 +1358,7 @@ export class ChatService {
   }
 
   async suggestNextAction(patientId: string, context: any): Promise<any> {
-    const suggestions = [];
+    const suggestions: string[] = [];
 
     if (context.vitals?.HR > 100) {
       suggestions.push('Check for tachycardia causes');
@@ -1362,7 +1376,7 @@ export class ChatService {
   }
 
   async analyzeVitals(vitals: Record<string, any>): Promise<any> {
-    const analysis = {
+    const analysis: { normal: string[]; caution: string[]; critical: string[] } = {
       normal: [],
       caution: [],
       critical: [],
@@ -1957,6 +1971,7 @@ export class ChatService {
     classification: any,
     userId?: string,
     aiFoundation?: Record<string, any>,
+    organizationId?: string,
   ): Promise<QueryResponse> {
     this.logger.log(`📚 Handling medical reference query with RAG`);
 
@@ -1981,6 +1996,7 @@ export class ChatService {
         topK: 5,
         minScore: 0.6,
         documentType: 'guideline', // Prefer guidelines for medical references
+        organizationId,
       });
 
       this.logger.log(

@@ -1,7 +1,14 @@
 import type { AIRequest, AIResponse } from '../llmTransport';
 import type { AIRequestType } from '../types';
+import type { AiDeployMode } from '../deploymentFlags';
 
-export type LlmProviderId = 'anthropic' | 'openai' | 'azure-openai' | 'gemini' | 'local';
+export type LlmProviderId =
+  | 'anthropic'
+  | 'openai'
+  | 'azure-openai'
+  | 'gemini'
+  | 'groq'
+  | 'local';
 
 export interface LlmAdapterHealth {
   provider: LlmProviderId;
@@ -12,29 +19,44 @@ export interface LlmAdapterHealth {
 
 export interface LlmAdapterRuntime {
   apiKey?: string;
+
   /** Azure OpenAI endpoint root, e.g. https://my-resource.openai.azure.com */
   azureEndpoint?: string;
+
   azureApiVersion?: string;
   azureDeployment?: string;
-  /** Optional override model/deployment name */
+
+  /** Optional override model/deployment name. */
   model?: string;
+
+  /** Per-request timeout override in milliseconds. */
+  timeoutMs?: number;
+
+  /** Optional abort signal composed with the transport timeout. */
+  signal?: AbortSignal;
+
   metadataLogger?: (metadata: {
-  requestType: AIRequestType;
-  model: string;
-  stream: boolean;
-  maxTokens: number;
-  usage: AIResponse['usage'];
-  toolCallCount: number;
-  provider?: LlmProviderId;
-  phiMinimized?: boolean;
-  redactionCount?: number;
-  fallbackUsed?: boolean;
-  deployMode?: string;
-}) => void;
+    requestType: AIRequestType;
+    model: string;
+    stream: boolean;
+    maxTokens: number;
+    usage: AIResponse['usage'];
+    toolCallCount: number;
+    provider?: LlmProviderId;
+    phiMinimized?: boolean;
+    redactionCount?: number;
+    fallbackUsed?: boolean;
+    deployMode?: AiDeployMode;
+  }) => void;
 }
 
 export interface LlmAdapter {
   readonly id: LlmProviderId;
+
   health(runtime?: LlmAdapterRuntime): LlmAdapterHealth;
-  complete(request: AIRequest, runtime?: LlmAdapterRuntime): Promise<AIResponse>;
+
+  complete(
+    request: AIRequest,
+    runtime?: LlmAdapterRuntime,
+  ): Promise<AIResponse>;
 }

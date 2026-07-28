@@ -3,43 +3,25 @@
     "inputText": "name: NIHSS Summary View",
     "expected": "calculator",
     "predicted": "document",
-    "confidence": 0.7382091207955539,
+    "confidence": 0.8644324340410626,
     "labelType": "name",
     "artifactId": "nihss-summary-view",
     "artifactType": "calculator"
   },
   {
-    "inputText": "route: /tools/pulmonology/oxygen-escalation-helper",
-    "expected": "tool",
-    "predicted": "prompt",
-    "confidence": 0.5345265325667337,
-    "labelType": "route",
-    "artifactId": "oxygen-escalation-helper",
-    "artifactType": "tool"
-  },
-  {
     "inputText": "route: /integrations/hl7",
     "expected": "tool",
     "predicted": "route",
-    "confidence": 0.5049785050812862,
+    "confidence": 0.4115118887006201,
     "labelType": "route",
     "artifactId": "hl7-bridge",
-    "artifactType": "tool"
-  },
-  {
-    "inputText": "route: /tools/calculator-recommender",
-    "expected": "tool",
-    "predicted": "prompt",
-    "confidence": 0.5837076626816018,
-    "labelType": "route",
-    "artifactId": "calculator-recommender-ai",
     "artifactType": "tool"
   },
   {
     "inputText": "route: /costs",
     "expected": "tool",
     "predicted": "route",
-    "confidence": 0.9605501131219438,
+    "confidence": 0.951184980495309,
     "labelType": "route",
     "artifactId": "ai-cost-optimization",
     "artifactType": "tool"
@@ -48,7 +30,7 @@
     "inputText": "name: Prompt Firewall",
     "expected": "tool",
     "predicted": "prompt",
-    "confidence": 0.7770903206454902,
+    "confidence": 0.7844773523642631,
     "labelType": "name",
     "artifactId": "prompt-firewall",
     "artifactType": "tool"
@@ -57,7 +39,7 @@
     "inputText": "name: NEXUS C-Spine Rule",
     "expected": "tool",
     "predicted": "calculator",
-    "confidence": 0.5919152677254027,
+    "confidence": 0.45729529293848614,
     "labelType": "name",
     "artifactId": "nexus-cspine",
     "artifactType": "tool"
@@ -66,7 +48,7 @@
     "inputText": "name: Deployment Observability",
     "expected": "tool",
     "predicted": "document",
-    "confidence": 0.9592706280470934,
+    "confidence": 0.9880599071076035,
     "labelType": "name",
     "artifactId": "deployment-observability",
     "artifactType": "tool"
@@ -75,115 +57,97 @@
     "inputText": "name: Vertigo HINTS Assistant",
     "expected": "tool",
     "predicted": "prompt",
-    "confidence": 0.5252197888358637,
+    "confidence": 0.5548504877622343,
     "labelType": "name",
     "artifactId": "vertigo-hints-assistant",
     "artifactType": "tool"
   },
   {
-    "inputText": "name: platform | Route Optimization Engine",
-    "expected": "platform",
-    "predicted": "route",
-    "confidence": 0.8262456374507895,
+    "inputText": "name: api-endpoint | ai-explainability-trace",
+    "expected": "api-endpoint",
+    "predicted": "tool",
+    "confidence": 0.5106096816955304,
     "labelType": "name",
-    "artifactId": "route-optimizer",
-    "artifactType": "platform"
+    "artifactId": "frontend-api-ai-explainability-trace",
+    "artifactType": "api-endpoint"
   },
   {
-    "inputText": "name: User roles",
+    "inputText": "name: SaaS Service Journey Map",
     "expected": "document",
-    "predicted": "tool",
-    "confidence": 0.6521505065023515,
+    "predicted": "route",
+    "confidence": 0.6789602016293467,
     "labelType": "name",
-    "artifactId": "doc-docs-generated-roles-md",
+    "artifactId": "doc-docs-specs-saas-service-journey-map-md",
     "artifactType": "document"
   },
   {
-    "inputText": "route: /tools/calculators/revised-trauma-score",
-    "expected": "prompt",
-    "predicted": "calculator",
-    "confidence": 0.9433125039050752,
-    "labelType": "route",
-    "artifactId": "prompt-revised-trauma-score",
-    "artifactType": "prompt"
-  },
-  {
-    "inputText": "route: /tools/calculators/rox-index",
-    "expected": "prompt",
-    "predicted": "calculator",
-    "confidence": 0.8972362518743145,
-    "labelType": "route",
-    "artifactId": "prompt-rox-index",
-    "artifactType": "prompt"
-  },
-  {
-    "inputText": "route: /tools/calculators/rass",
-    "expected": "prompt",
-    "predicted": "calculator",
-    "confidence": 0.5781195543650439,
-    "labelType": "route",
-    "artifactId": "prompt-rass",
-    "artifactType": "prompt"
-  },
-  {
-    "inputText": "route: /tools/psychiatry/substance-use-screening-assistant",
-    "expected": "prompt",
+    "inputText": "name: Production AI monitoring v1",
+    "expected": "document",
     "predicted": "tool",
-    "confidence": 0.6948664030684402,
-    "labelType": "route",
-    "artifactId": "prompt-substance-use-screening-assistant",
-    "artifactType": "prompt"
-  },
-  {
-    "inputText": "route: /fleet/route-optimizer",
-    "expected": "prompt",
-    "predicted": "route",
-    "confidence": 0.9561485095589964,
-    "labelType": "route",
-    "artifactId": "prompt-route-optimizer",
-    "artifactType": "prompt"
-  },
-  {
-    "inputText": "route: /tools/calculators/rockall-score",
-    "expected": "prompt",
-    "predicted": "calculator",
-    "confidence": 0.9056993810063466,
-    "labelType": "route",
-    "artifactId": "prompt-rockall-score",
-    "artifactType": "prompt"
-  },
-  {
-    "inputText": "route: /tools/calculators/shock-index",
-    "expected": "prompt",
-    "predicted": "calculator",
-    "confidence": 0.870695552578681,
-    "labelType": "route",
-    "artifactId": "prompt-shock-index",
-    "artifactType": "prompt"
-  },
-  {
-    "inputText": "name: predictiveAnalytics route",
-    "expected": "route",
-    "predicted": "tool",
-    "confidence": 0.9235072702695409,
+    "confidence": 0.6615826031884303,
     "labelType": "name",
-    "artifactId": "route-predictiveAnalytics",
-    "artifactType": "route"
+    "artifactId": "doc-docs-ai-production-monitoring-v1-md",
+    "artifactType": "document"
   },
   {
-    "inputText": "name: platformAnalytics route",
+    "inputText": "name: Door-to-Doctor Intelligence",
+    "expected": "document",
+    "predicted": "tool",
+    "confidence": 0.8777922355065434,
+    "labelType": "name",
+    "artifactId": "doc-docs-workflows-door-to-doctor-intelligence-md",
+    "artifactType": "document"
+  },
+  {
+    "inputText": "name: Full Emergency-Care Journey",
+    "expected": "document",
+    "predicted": "tool",
+    "confidence": 0.3867333229257369,
+    "labelType": "name",
+    "artifactId": "doc-docs-specs-full-emergency-care-journey-md",
+    "artifactType": "document"
+  },
+  {
+    "inputText": "name: Stage J — Final Measure & Rescore",
+    "expected": "document",
+    "predicted": "calculator",
+    "confidence": 0.8367460254092467,
+    "labelType": "name",
+    "artifactId": "doc-docs-architecture-architect-mode-stage-j-rescore-md",
+    "artifactType": "document"
+  },
+  {
+    "inputText": "route: api-endpoint | /tools/cardiology/remote-cardiology-monitoring-dashboard",
+    "expected": "prompt",
+    "predicted": "tool",
+    "confidence": 0.8720097506058371,
+    "labelType": "route",
+    "artifactId": "prompt-remote-cardiology-monitoring-dashboard",
+    "artifactType": "prompt"
+  },
+  {
+    "inputText": "name: HUMAN_REVIEW_DISCLAIMER",
+    "expected": "registry",
+    "predicted": "tool",
+    "confidence": 0.623855374803051,
+    "labelType": "name",
+    "artifactId": "registry-lib-ai-safetypolicy-ts",
+    "artifactType": "registry"
+  },
+  {
+    "inputText": "route: platform | /platform-admin",
     "expected": "route",
     "predicted": "platform",
-    "confidence": 0.8609115158164043,
-    "labelType": "name",
-    "artifactId": "route-platformAnalytics",
+    "confidence": 0.949690827491114,
+    "labelType": "route",
+    "artifactId": "route-platformAdmin",
     "artifactType": "route"
   },
   {
     "inputText": "route: /usage",
     "expected": "route",
     "predicted": "tool",
-    "confidence": 0.6556676815483237,
+    "confidence": 0.6498564423692921,
     "labelType": "route",
     "artifactId": "route-usage",
     "artifactType": "route"

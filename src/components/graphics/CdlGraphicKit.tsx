@@ -109,8 +109,10 @@ type SituationGraphicCardProps = {
 export function SituationGraphicCard({ id, label, value }: SituationGraphicCardProps) {
   const graphic = SITUATION_BRIEF_GRAPHICS[id];
   return (
-    <li className={`cdl-situation-graphic-card cdl-situation-graphic-card--${graphic.accent}`}>
-      <CdlGraphicMotif motif={graphic.motif} className="cdl-situation-graphic-card__motif" />
+    <li
+      className={`cdl-situation-cell cdl-situation-graphic-card--${graphic.accent}`}
+      data-cdl-surface="flat"
+    >
       <GraphicIconBadge iconKey={graphic.iconKey} accent={graphic.accent} size="sm" />
       <div className="cdl-situation-graphic-card__content">
         <span className="cdl-situation-graphic-card__label">{label}</span>
@@ -144,9 +146,8 @@ export function MetricGraphicCard({
   return (
     <article
       className={[
+        /* Single leaf surface — do not stack emergency-route-card + metric-card + graphic */
         'cdl-metric-graphic-card',
-        'emergency-route-card',
-        'emergency-route-metric-card',
         tone ? `cdl-metric-graphic-card--${tone}` : '',
       ]
         .filter(Boolean)
@@ -267,7 +268,7 @@ export function EmsUnitTrackGraphic({ status, unitId, breach = false, className 
       <div className="cdl-ems-unit-track__rail" aria-hidden>
         <span className="cdl-ems-unit-track__fill" style={{ width: `${progress}%` }} />
         {[15, 35, 55, 80, 100].map((mark) => (
-          <span key={mark} className="cdl-ems-unit-track__mark" style={{ left: `${mark}%` }} />
+          <span key={mark} className={`cdl-ems-unit-track__mark cdl-ems-unit-track__mark--${mark}`} />
         ))}
       </div>
       <GraphicIconBadge iconKey="ems" accent={breach ? 'critical' : progress >= 80 ? 'action' : 'information'} size="sm" />

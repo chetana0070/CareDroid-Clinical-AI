@@ -59,14 +59,22 @@ pages-map.txt
 /qa/page-screenshots/
 /qa/dashboard-resize-audit/*.png
 /qa/screenshot-backend.sqlite*
+/qa/a11y-results.json
+/qa/a11y-results/
+/qa/playwright-a11y-report.json
+/qa/performance-results/
 /e2e/.auth/qa-user.json
 .vercel
 
 # Local agent worktrees / settings
 .claude/
+.bob/
 
 
 # Local health scan outputs
 bug-inventory-report.json
 source-dirt-report.json
+
+# Tesseract.js OCR language data (auto-downloaded at runtime, machine-local, safe to regenerate)
+backend/*.traineddata
 

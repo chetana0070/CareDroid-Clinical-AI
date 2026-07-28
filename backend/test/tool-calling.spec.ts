@@ -157,9 +157,10 @@ describe('Tool Calling Integration (Batch 15 Phase 1)', () => {
             createRunEnvelope: jest.fn().mockReturnValue({
               runId: 'test-run-id',
               capabilityId: 'assistant-chat',
-              policy: { phiAccessed: false },
+              policy: { phiAccessed: false, allowedTools: [] },
               trace: { startedAt: new Date().toISOString() },
             }),
+            attachUnifiedNode: jest.fn((envelope) => envelope),
             logRoutingAudit: jest.fn().mockResolvedValue(undefined),
           },
         },
@@ -322,7 +323,7 @@ describe('Tool Calling Integration (Batch 15 Phase 1)', () => {
 
     it('should include SOFA Calculator tool', () => {
       const tools = aiService.getToolDefinitions();
-      const sofaTool = tools.find((t) => t.name === 'sofa_calculator');
+      const sofaTool = tools.find((t) => t.name === 'sofa_calculator')!;
 
       expect(sofaTool).toBeDefined();
       expect(sofaTool.description).toContain('SOFA');
@@ -331,7 +332,7 @@ describe('Tool Calling Integration (Batch 15 Phase 1)', () => {
 
     it('should include Drug Checker tool', () => {
       const tools = aiService.getToolDefinitions();
-      const drugTool = tools.find((t) => t.name === 'drug_checker');
+      const drugTool = tools.find((t) => t.name === 'drug_checker')!;
 
       expect(drugTool).toBeDefined();
       expect(drugTool.description).toContain('drug');
@@ -340,7 +341,7 @@ describe('Tool Calling Integration (Batch 15 Phase 1)', () => {
 
     it('should include Lab Interpreter tool', () => {
       const tools = aiService.getToolDefinitions();
-      const labTool = tools.find((t) => t.name === 'lab_interpreter');
+      const labTool = tools.find((t) => t.name === 'lab_interpreter')!;
 
       expect(labTool).toBeDefined();
       expect(labTool.description).toContain('lab');
@@ -531,7 +532,7 @@ describe('Tool Calling Integration (Batch 15 Phase 1)', () => {
   describe('MVP Scope (SOFA, Drug Checker, Lab Interpreter)', () => {
     it('should support SOFA Calculator invocation', async () => {
       const tools = aiService.getToolDefinitions();
-      const sofaTool = tools.find((t) => t.name === 'sofa_calculator');
+      const sofaTool = tools.find((t) => t.name === 'sofa_calculator')!;
 
       expect(sofaTool).toBeDefined();
       // Verify required parameters
@@ -542,7 +543,7 @@ describe('Tool Calling Integration (Batch 15 Phase 1)', () => {
 
     it('should support Drug Checker invocation', async () => {
       const tools = aiService.getToolDefinitions();
-      const drugTool = tools.find((t) => t.name === 'drug_checker');
+      const drugTool = tools.find((t) => t.name === 'drug_checker')!;
 
       expect(drugTool).toBeDefined();
       expect(drugTool.input_schema.properties.medications.type).toBe('array');
@@ -551,7 +552,7 @@ describe('Tool Calling Integration (Batch 15 Phase 1)', () => {
 
     it('should support Lab Interpreter invocation', async () => {
       const tools = aiService.getToolDefinitions();
-      const labTool = tools.find((t) => t.name === 'lab_interpreter');
+      const labTool = tools.find((t) => t.name === 'lab_interpreter')!;
 
       expect(labTool).toBeDefined();
       expect(labTool.input_schema.required).toContain('test_name');

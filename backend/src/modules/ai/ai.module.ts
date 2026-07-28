@@ -15,14 +15,22 @@ import { IntentClassifierModule } from '../medical-control-plane/intent-classifi
 import { CollaborationHubModule } from '../collaboration-hub/collaboration-hub.module';
 import {
   AiContextManagerService,
-  AiGatewayService,
   AiResponseComposerService,
   AiRoutingEngineService,
 } from './foundation';
+import { AiActionProposalService } from './ai-action-proposal.service';
+import { AIActionProposalRecord } from './entities/ai-action-proposal-record.entity';
+import { AIActionProposalAuditEntry } from './entities/ai-action-proposal-audit-entry.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AIQuery, Subscription, User]),
+    TypeOrmModule.forFeature([
+      AIQuery,
+      AIActionProposalRecord,
+      AIActionProposalAuditEntry,
+      Subscription,
+      User,
+    ]),
     AuditModule,
     MetricsModule,
     OrganizationsModule,
@@ -35,14 +43,14 @@ import {
   controllers: [AIController],
   providers: [
     AIService,
-    AiGatewayService,
+    AiActionProposalService,
     AiRoutingEngineService,
     AiContextManagerService,
     AiResponseComposerService,
   ],
   exports: [
     AIService,
-    AiGatewayService,
+    AiActionProposalService,
     AiRoutingEngineService,
     AiContextManagerService,
     AiResponseComposerService,
